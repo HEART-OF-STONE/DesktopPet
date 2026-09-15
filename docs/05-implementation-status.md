@@ -1,4 +1,22 @@
-# v0.1.0 实现与验证记录
+# 实现与验证记录
+
+## v0.1.1：昵称与默认名字（2026-09-15）
+
+已新增主页与衣橱改名入口，支持昵称、默认名字、取消、恢复默认名以及 1–24 个字符校验。名字按角色 ID 独立保存；既有皮肤、计时与导入素材不变。`petNames` 和 `petDefaultNames` 是可选旧存档字段，缺失时补为空映射，数据协议继续使用版本 1。
+
+- 前端原有 7 项测试通过，Rust 4 项测试通过，包含旧存档兼容、名称优先级和 Unicode 限制。
+- `scripts/rename-smoke.js` 已通过：空/超长输入、中文和表情、首尾空白、回车保存、Esc 取消、换肤与刷新、内置/导入角色分别改名、移除后清理名称、长名称窄屏布局、默认名编辑与恢复。
+- `scripts/native-rename-smoke.js` 已通过：从旧存档升级、两个实际 Tauri 窗口同步、宿主拒绝非法名字、昵称和默认名恢复。
+- `scripts/native-rename-restart.js` 已通过：完整停止测试进程并重启后，昵称、用户设置的默认名字和皮肤均保留；再次恢复默认名使用用户设置的名字。
+- Windows release 构建输出放在 `output/DesktopPet-v0.1.1/DesktopPet.exe`，沿用正式应用 ID 与数据目录。
+
+native 测试使用 `scripts/fixtures/tauri-test-config.json` 覆盖测试应用标识，避免与正在运行的旧版单实例冲突。构建测试程序：`npm run desktop:build -- --debug --no-bundle --config scripts/fixtures/tauri-test-config.json`。正式构建不传入这个配置。运行时使用全新临时 `DESKTOPPET_DATA_DIR`，初始样本为 `scripts/fixtures/legacy-state.json`，并给测试 WebView2 设置独立用户目录及 9223 调试端口。没有改动日常存档或关闭日常运行实例。
+
+以下保留 v0.1.0 首轮记录。其中“完整进程重启尚未通过”针对当时验证；v0.1.1 已补充名字和皮肤的重启验证，计时休眠、多屏、真实鼠标穿透和长期占用仍待独立验收。
+
+---
+
+# v0.1.0 首轮记录
 
 日期：2026-09-15。范围：用户确认的静态图片加程序变形、逐帧 2D 与本地陪伴原型。**此记录不等于完成 V1 发布验收。**
 

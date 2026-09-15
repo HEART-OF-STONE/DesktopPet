@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{fs, io::Write, path::PathBuf, sync::Mutex, time::{Duration, SystemTime, UNIX_EPOCH}};
+use std::{collections::BTreeMap, fs, io::Write, path::PathBuf, sync::Mutex, time::{Duration, SystemTime, UNIX_EPOCH}};
 use tauri::{Emitter, Manager, PhysicalPosition, WebviewWindow};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -10,6 +10,10 @@ use tauri::{Emitter, Manager, PhysicalPosition, WebviewWindow};
 struct Preferences {
     pet_id: String, skin_id: String, scale: f64, sound: bool, volume: f64,
     topmost: bool, snap: bool, quiet: bool, pet_visible: bool,
+    #[serde(default)]
+    pet_names: BTreeMap<String, String>,
+    #[serde(default)]
+    pet_default_names: BTreeMap<String, String>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,7 +23,7 @@ struct Timer { status: String, duration_ms: u64, remaining_ms: u64, ends_at: Opt
 struct Snapshot { version: u8, preferences: Preferences, timer: Timer, custom_pets: Vec<Value> }
 impl Default for Snapshot {
     fn default() -> Self { Self {
-        version: 1, preferences: Preferences { pet_id: "doubao-static".into(), skin_id: "cream".into(), scale: 1., sound: false, volume: 0.25, topmost: true, snap: true, quiet: false, pet_visible: true },
+        version: 1, preferences: Preferences { pet_id: "doubao-static".into(), skin_id: "cream".into(), scale: 1., sound: false, volume: 0.25, topmost: true, snap: true, quiet: false, pet_visible: true, pet_names: BTreeMap::new(), pet_default_names: BTreeMap::new() },
         timer: Timer { status: "idle".into(), duration_ms: 1_500_000, remaining_ms: 1_500_000, ends_at: None }, custom_pets: vec![],
     } }
 }
@@ -44,11 +48,22 @@ fn mutate(app: &tauri::AppHandle, f: impl FnOnce(&mut Snapshot) -> Result<(), St
     let mut next = data.clone(); f(&mut next)?; persist(&runtime, &next)?; *data = next.clone();
     drop(data);
     app.emit("state-changed", &next).map_err(|e| e.to_string())?;
+    if let Some(pet) = app.get_webview_window("pet") { let _ = pet.set_title(&pet_display_name(&next)); }
     Ok(next)
 }
 fn valid_preferences(p: &Preferences) -> bool {
     p.scale.is_finite() && (0.65..=1.35).contains(&p.scale) && p.volume.is_finite() && (0.0..=1.0).contains(&p.volume)
         && p.pet_id.len() <= 100 && p.skin_id.len() <= 100
+        && [&p.pet_names, &p.pet_default_names].iter().all(|names| names.len() <= 8 && names.iter().all(|(id, name)|
+            !id.is_empty() && id.len() <= 100 && !name.is_empty() && name.trim() == name
+                && name.chars().count() <= 24 && !name.chars().any(char::is_control)))
+}
+fn pet_display_name(s: &Snapshot) -> String {
+    let id = &s.preferences.pet_id;
+    if let Some(name) = s.preferences.pet_names.get(id) { return name.clone(); }
+    if let Some(name) = s.preferences.pet_default_names.get(id) { return name.clone(); }
+    if let Some(name) = s.custom_pets.iter().find(|p| p["id"].as_str() == Some(id.as_str())).and_then(|p| p["name"].as_str()) { return name.into(); }
+    if id == "doubao-sprite" { "豆包 · 动画版".into() } else { "豆包".into() }
 }
 #[tauri::command]
 fn get_snapshot(app: tauri::AppHandle) -> Result<Snapshot, String> { Ok(app.state::<Runtime>().data.lock().map_err(|_| "状态暂时不可用")?.clone()) }
@@ -103,6 +118,8 @@ fn add_pet(app: tauri::AppHandle, pack: Value) -> Result<Snapshot, String> {
 #[tauri::command]
 fn remove_pet(app: tauri::AppHandle, id: String) -> Result<Snapshot, String> {
     mutate(&app, |s| { s.custom_pets.retain(|p| p["id"] != id);
+        s.preferences.pet_names.remove(&id);
+        s.preferences.pet_default_names.remove(&id);
         if s.preferences.pet_id == id { s.preferences.pet_id = "doubao-static".into(); s.preferences.skin_id = "cream".into(); } Ok(()) })
 }
 #[tauri::command]
@@ -204,6 +221,7 @@ fn main() {
             let data = read_state(&path).or_else(|| read_state(&path.with_extension("backup.json"))).unwrap_or_default();
             app.manage(Runtime { data:Mutex::new(data.clone()), regions:Mutex::new(vec![]), drag:Mutex::new(None), path });
             let pet = app.get_webview_window("pet").unwrap();
+            pet.set_title(&pet_display_name(&data))?;
             pet.set_focusable(false)?;
             pet.set_always_on_top(data.preferences.topmost)?;
             if let Ok(value) = fs::read(directory.join("position.json")).map(|b| serde_json::from_slice::<Value>(&b)) {
@@ -245,5 +263,35 @@ mod tests {
     #[test] fn rejects_invalid_duration_and_scale() {
         assert!(timer_transition(&mut Snapshot::default().timer,"start",f64::NAN,0).is_err());
         let mut p=Snapshot::default().preferences; p.scale=9.; assert!(!valid_preferences(&p));
+    }
+    #[test] fn legacy_save_restores_settings_without_names_and_new_names_survive_roundtrip() {
+        let mut old = serde_json::to_value(Snapshot::default()).unwrap();
+        old["preferences"].as_object_mut().unwrap().remove("petNames");
+        old["preferences"].as_object_mut().unwrap().remove("petDefaultNames");
+        old["preferences"]["skinId"] = json!("sage");
+        let mut state: Snapshot = serde_json::from_value(old).unwrap();
+        assert!(valid_preferences(&state.preferences));
+        assert_eq!(state.preferences.skin_id, "sage");
+        assert_eq!(pet_display_name(&state), "豆包");
+        state.preferences.pet_names.insert("doubao-static".into(), "小团子 🐾".into());
+        let restored: Snapshot = serde_json::from_slice(&serde_json::to_vec(&state).unwrap()).unwrap();
+        assert_eq!(pet_display_name(&restored), "小团子 🐾");
+        state.preferences.pet_id = "doubao-sprite".into();
+        assert_eq!(pet_display_name(&state), "豆包 · 动画版");
+        state.preferences.pet_id = "doubao-static".into();
+        state.preferences.pet_default_names.insert("doubao-static".into(), "年糕".into());
+        assert_eq!(pet_display_name(&state), "小团子 🐾");
+        state.preferences.pet_names.remove("doubao-static");
+        let restored: Snapshot = serde_json::from_slice(&serde_json::to_vec(&state).unwrap()).unwrap();
+        assert_eq!(pet_display_name(&restored), "年糕");
+    }
+    #[test] fn unicode_names_are_bounded_and_invalid_names_rejected() {
+        let mut prefs = Snapshot::default().preferences;
+        prefs.pet_names.insert("doubao-static".into(), "🐾".repeat(24));
+        assert!(valid_preferences(&prefs));
+        for invalid in ["".into(), " ".into(), " 小团子".into(), "小\n团子".into(), "🐾".repeat(25)] {
+            prefs.pet_names.insert("doubao-static".into(), invalid);
+            assert!(!valid_preferences(&prefs));
+        }
     }
 }
