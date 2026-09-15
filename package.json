@@ -1,0 +1,33 @@
+{
+  "name": "desktop-pet",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "assets": "node scripts/generate-pets.mjs",
+    "examples": "node scripts/generate-examples.mjs",
+    "desktop:dev": "node scripts/tauri.mjs dev",
+    "desktop:build": "node scripts/tauri.mjs build",
+    "desktop:check": "node scripts/tauri.mjs check"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.11.1",
+    "lucide-react": "1.46.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "sharp": "0.35.4",
+    "typescript": "7.0.2",
+    "vite": "8.3.0",
+    "vitest": "5.0.0"
+  }
+}

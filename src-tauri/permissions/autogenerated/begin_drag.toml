@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-begin-drag"
+description = "Enables the begin_drag command without any pre-configured scope."
+commands.allow = ["begin_drag"]
+
+[[permission]]
+identifier = "deny-begin-drag"
+description = "Denies the begin_drag command without any pre-configured scope."
+commands.deny = ["begin_drag"]

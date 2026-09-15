@@ -1,0 +1,6 @@
+{
+  "identifier": "management",
+  "description": "Only the management window can import or remove local character data.",
+  "windows": ["main"],
+  "permissions": ["allow-add-pet", "allow-remove-pet"]
+}

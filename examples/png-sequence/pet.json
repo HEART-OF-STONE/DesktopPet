@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "renderer": "sprite",
+  "width": 256,
+  "height": 256,
+  "author": "DesktopPet",
+  "license": "项目原创演示素材",
+  "name": "豆包 · PNG 序列示例",
+  "description": "独立 PNG 图片按清单指定顺序播放。",
+  "skins": [
+    {
+      "id": "cream",
+      "name": "奶油白",
+      "color": "#e9dcc3",
+      "assets": {
+        "frame0": "待机-01.png",
+        "frame1": "待机-02.png",
+        "frame2": "待机-03.png",
+        "frame3": "待机-04.png",
+        "frame4": "待机-05.png",
+        "frame5": "待机-06.png",
+        "frame6": "待机-07.png",
+        "frame7": "待机-08.png",
+        "frame8": "待机-09.png",
+        "frame9": "待机-10.png",
+        "frame10": "待机-11.png",
+        "frame11": "待机-12.png"
+      }
+    }
+  ],
+  "actions": {
+    "idle": {
+      "fps": 12,
+      "loop": true,
+      "frames": [
+        {
+          "asset": "frame0"
+        },
+        {
+          "asset": "frame1"
+        },
+        {
+          "asset": "frame2"
+        },
+        {
+          "asset": "frame3"
+        },
+        {
+          "asset": "frame4"
+        },
+        {
+          "asset": "frame5"
+        },
+        {
+          "asset": "frame6"
+        },
+        {
+          "asset": "frame7"
+        },
+        {
+          "asset": "frame8"
+        },
+        {
+          "asset": "frame9"
+        },
+        {
+          "asset": "frame10"
+        },
+        {
+          "asset": "frame11"
+        }
+      ]
+    }
+  }
+}

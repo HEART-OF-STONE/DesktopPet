@@ -1,0 +1,34 @@
+async (page) => {
+  const native=await page.context().browser().browserType().connectOverCDP('http://127.0.0.1:9223');
+  const pages=native.contexts().flatMap(context=>context.pages());
+  const main=pages.find(p=>!p.url().includes('pet=true'));
+  const pet=pages.find(p=>p.url().includes('pet=true'));
+  if(!main||!pet)throw new Error('Both native windows must exist');
+  const errors=[];main.on('pageerror',e=>errors.push(e.message));pet.on('pageerror',e=>errors.push(e.message));
+  await main.getByRole('heading',{name:'我的伙伴',exact:true}).waitFor();
+  if(await main.locator('.preview-note').count())throw new Error('Native bridge was not detected');
+  await main.getByRole('button',{name:'角色衣橱 2',exact:true}).click();
+  await main.getByRole('button',{name:'让它来陪我'}).click();
+  await pet.getByRole('img',{name:'豆包 · 动画版，逐帧动画',exact:true}).waitFor();
+  await main.getByRole('button',{name:'我的伙伴',exact:true}).click();
+  await main.getByRole('button',{name:'摸摸头',exact:true}).click();
+  await pet.locator('.pet-bubble').waitFor();
+  await main.getByRole('spinbutton',{name:'自定义分钟'}).fill('1');
+  await main.getByRole('button',{name:'开始专注',exact:true}).click();
+  await main.getByRole('button',{name:'暂停一下',exact:true}).click();
+  await main.reload();
+  await main.getByRole('button',{name:'继续专注',exact:true}).waitFor();
+  await main.getByRole('button',{name:'结束',exact:true}).click();
+  await main.getByRole('button',{name:'偏好设置',exact:true}).click();
+  await main.getByRole('switch',{name:'免打扰',exact:true}).click();
+  await main.getByRole('button',{name:'我的伙伴',exact:true}).click();
+  await main.getByRole('button',{name:'小零食',exact:true}).click();
+  await pet.locator('.pet-bubble').waitFor({state:'hidden'});
+  await main.getByRole('button',{name:'免打扰中',exact:true}).click();
+  await main.screenshot({path:'output/playwright/native-main.png'});
+  await pet.screenshot({path:'output/playwright/native-pet.png',omitBackground:true});
+  const snapshot=await main.evaluate(()=>window.__TAURI_INTERNALS__.invoke('get_snapshot'));
+  if(snapshot.preferences.petId!=='doubao-sprite'||snapshot.timer.status!=='idle')throw new Error('Native state is inconsistent');
+  if(errors.length)throw new Error(errors.join('\n'));
+  return {windows:pages.map(p=>p.url()),nativeState:{pet:snapshot.preferences.petId,timer:snapshot.timer.status},passed:['native bridge','cross-window role sync','cross-window interaction','native timer persistence','quiet mode']};
+}

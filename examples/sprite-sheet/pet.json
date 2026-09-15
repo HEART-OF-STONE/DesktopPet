@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "renderer": "sprite",
+  "width": 256,
+  "height": 256,
+  "author": "DesktopPet",
+  "license": "项目原创演示素材",
+  "name": "豆包 · 精灵图示例",
+  "description": "一张图片包含多帧，按矩形依次播放。",
+  "skins": [
+    {
+      "id": "cream",
+      "name": "奶油白",
+      "color": "#e9dcc3",
+      "assets": {
+        "idle": "idle.png",
+        "pet": "pet.png"
+      }
+    }
+  ],
+  "actions": {
+    "idle": {
+      "fps": 12,
+      "loop": true,
+      "frames": [
+        {
+          "asset": "idle",
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 256,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 512,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 768,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 1024,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 1280,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 1536,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 1792,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 2048,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 2304,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 2560,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "idle",
+          "x": 2816,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        }
+      ]
+    },
+    "pet": {
+      "fps": 12,
+      "loop": false,
+      "frames": [
+        {
+          "asset": "pet",
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 256,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 512,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 768,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 1024,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 1280,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 1536,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 1792,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 2048,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 2304,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 2560,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "pet",
+          "x": 2816,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        }
+      ]
+    }
+  }
+}

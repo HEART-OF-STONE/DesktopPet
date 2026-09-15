@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-trigger-action"
+description = "Enables the trigger_action command without any pre-configured scope."
+commands.allow = ["trigger_action"]
+
+[[permission]]
+identifier = "deny-trigger-action"
+description = "Denies the trigger_action command without any pre-configured scope."
+commands.deny = ["trigger_action"]
