@@ -5,8 +5,9 @@ import type { Action, HitRegion, PetPack, Skin } from '../core/types';
 interface Props {
   pack: PetPack; skin: Skin; action?: Action; sequence?: number; size?: number;
   pressed?: boolean; flipped?: boolean; paused?: boolean; onRegions?: (regions: HitRegion[]) => void;
+  displayName?: string;
 }
-export function PetRenderer({pack, skin, action='idle', sequence=0, size=256, pressed=false, flipped=false, paused=false, onRegions}: Props) {
+export function PetRenderer({pack, skin, action='idle', sequence=0, size=256, pressed=false, flipped=false, paused=false, onRegions, displayName=pack.name}: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const callback = useRef(onRegions); callback.current = onRegions;
   const [error,setError] = useState('');
@@ -66,7 +67,7 @@ export function PetRenderer({pack, skin, action='idle', sequence=0, size=256, pr
   },[pack,skin,action,sequence,flipped,paused]);
   const ratio=Math.min(size/pack.width,size/pack.height);
   return <div className={`pet-art action-${action} ${pressed?'is-pressed':''}`} style={{width:pack.width*ratio,height:pack.height*ratio}}>
-    <canvas ref={canvas} width={pack.width} height={pack.height} role="img" aria-label={`${pack.name}，${pack.renderer==='static'?'静态图片':'逐帧动画'}`} />
+    <canvas ref={canvas} width={pack.width} height={pack.height} role="img" aria-label={`${displayName}，${pack.renderer==='static'?'静态图片':'逐帧动画'}`} />
     {error&&<span className="asset-error">图片暂时无法显示</span>}
   </div>;
 }

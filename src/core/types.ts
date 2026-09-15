@@ -12,6 +12,8 @@ export interface PetPack {
 export interface Preferences {
   petId: string; skinId: string; scale: number; sound: boolean; volume: number;
   topmost: boolean; snap: boolean; quiet: boolean; petVisible: boolean;
+  petNames: Record<string, string>;
+  petDefaultNames: Record<string, string>;
 }
 export interface TimerState {
   status: 'idle' | 'running' | 'paused' | 'done';
@@ -22,7 +24,7 @@ export interface HitRegion { x: number; y: number; width: number; height: number
 export const defaultSnapshot = (): Snapshot => ({
   version: 1,
   preferences: { petId: 'doubao-static', skinId: 'cream', scale: 1, sound: false,
-    volume: 0.25, topmost: true, snap: true, quiet: false, petVisible: true },
+    volume: 0.25, topmost: true, snap: true, quiet: false, petVisible: true, petNames: {}, petDefaultNames: {} },
   timer: { status: 'idle', durationMs: 25 * 60000, remainingMs: 25 * 60000, endsAt: null },
   customPets: [],
 });

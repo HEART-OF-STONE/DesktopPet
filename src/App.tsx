@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowDownToLine, ArrowUpRight, Cat, Check, ChevronRight, Coffee, Heart, Leaf, Moon, Play, Pause, RotateCcw, Settings2, Shirt, Sparkles, Timer, Trash2, Upload, Volume2, X, Eye, EyeOff } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpRight, Cat, Check, ChevronRight, Coffee, Heart, Leaf, Moon, Play, Pause, Pencil, RotateCcw, Settings2, Shirt, Sparkles, Timer, Trash2, Upload, Volume2, X, Eye, EyeOff } from 'lucide-react';
 import { PetRenderer } from './renderers/PetRenderer';
 import { builtins, importFiles } from './core/packs';
 import { useCompanion, useSnapshot } from './core/hooks';
 import { formatTime, remaining } from './core/animation';
-import { addPet, desktop, desktopAction, removePet, timerAction, triggerAction, updatePreferences } from './platform/bridge';
+import { addPet, desktop, desktopAction, removePet, renamePet, timerAction, triggerAction, updatePreferences } from './platform/bridge';
+import { petDefaultName, petDisplayName } from './core/petNames';
+import { PetNameDialog } from './PetNameDialog';
 import type { Action, PetPack, Preferences } from './core/types';
 
 type Page='home'|'wardrobe'|'settings';
@@ -13,10 +15,12 @@ export function App() {
   const [page,setPage]=useState<Page>('home'); const [now,setNow]=useState(Date.now());
   const [minutes,setMinutes]=useState(25); const [pressed,setPressed]=useState(false); const [flipped,setFlipped]=useState(false);
   const [notice,setNotice]=useState(''); const [importing,setImporting]=useState(false);
+  const [renaming,setRenaming]=useState<PetPack|null>(null);
   const fileInput=useRef<HTMLInputElement>(null); const noticeTimer=useRef<ReturnType<typeof setTimeout>>(undefined);
   const previousTimer=useRef(snapshot.timer.status);
   const prefs=snapshot.preferences; const pets=[...builtins,...snapshot.customPets];
   const pack=pets.find(p=>p.id===prefs.petId)||builtins[0]; const skin=pack.skins.find(s=>s.id===prefs.skinId)||pack.skins[0];
+  const name=petDisplayName(pack,prefs);
   const left=remaining(snapshot.timer,now); const active=snapshot.timer.status==='running'; const paused=snapshot.timer.status==='paused';
   useEffect(()=>{const tick=setInterval(()=>setNow(Date.now()),500);return()=>clearInterval(tick);},[]);
   useEffect(()=>()=>clearTimeout(noticeTimer.current),[]);
@@ -25,7 +29,7 @@ export function App() {
   async function perform(work:()=>Promise<unknown>,success?:string){try{await work();setError('');if(success)message(success);}catch(e){setError(e instanceof Error?e.message:String(e));}}
   const setPrefs=(patch:Partial<Preferences>)=>perform(()=>updatePreferences(patch));
   const act=(action:Action)=>perform(()=>triggerAction(action));
-  function select(pet:PetPack){void perform(()=>updatePreferences({petId:pet.id,skinId:pet.skins[0].id}),`已经换成${pet.name}`);}
+  function select(pet:PetPack){void perform(()=>updatePreferences({petId:pet.id,skinId:pet.skins[0].id}),`已经换成${petDisplayName(pet,prefs)}`);}
   async function handleImport(files:File[]){setImporting(true);await perform(async()=>{const imported=await importFiles(files);await addPet(imported);setPage('wardrobe');},'新伙伴已经住进来了');setImporting(false);if(fileInput.current)fileInput.current.value='';}
   function exportPreferences(){const json=JSON.stringify({version:1,preferences:prefs},null,2);const url=URL.createObjectURL(new Blob([json],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='desktop-pet-settings.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('已导出外观与行为设置');}
   const titles={home:['我的伙伴','给忙碌的日常，留一点柔软。'],wardrobe:['角色衣橱','挑一个今天想陪在身边的伙伴。'],settings:['偏好设置','让陪伴刚刚好。']};
@@ -38,7 +42,7 @@ export function App() {
         <button className={page==='wardrobe'?'active':''} onClick={()=>setPage('wardrobe')}><Shirt size={18}/>角色衣橱<span className="nav-count">{pets.length}</span></button>
         <button className={page==='settings'?'active':''} onClick={()=>setPage('settings')}><Settings2 size={18}/>偏好设置</button>
       </nav>
-      <div className="sidebar-bottom"><div className="little-note"><Leaf size={21}/><p>不用时刻回应。<br/>陪着你，就很好。</p></div><span className="version"><i/>本地陪伴 · v0.1.0</span></div>
+      <div className="sidebar-bottom"><div className="little-note"><Leaf size={21}/><p>不用时刻回应。<br/>陪着你，就很好。</p></div><span className="version"><i/>本地陪伴 · v0.1.1</span></div>
     </aside>
     <main className="main-content">
       <header className="page-header"><div><div className="eyebrow">A LITTLE COMPANY</div><h1>{titles[page][0]}</h1><p>{titles[page][1]}</p></div>
@@ -53,10 +57,10 @@ export function App() {
           <div className="stage-character">
             {companion.bubble&&(!prefs.quiet||companion.action==='celebrate')&&<div className="preview-bubble" role="status">{companion.bubble}</div>}
             <button className="pet-touch" aria-label="摸摸宠物" onPointerDown={()=>setPressed(true)} onPointerUp={()=>setPressed(false)} onPointerLeave={()=>setPressed(false)} onClick={()=>void act('pet')}>
-              <PetRenderer pack={pack} skin={skin} action={companion.action} sequence={companion.sequence} size={262} pressed={pressed} flipped={flipped}/>
+              <PetRenderer pack={pack} skin={skin} displayName={name} action={companion.action} sequence={companion.sequence} size={262} pressed={pressed} flipped={flipped}/>
             </button>
           </div>
-          <div className="stage-footer"><div><strong>{pack.name}</strong><span>{pack.description}</span></div><button className="round-button" onClick={()=>setFlipped(v=>!v)} aria-label="翻转预览"><RotateCcw size={16}/></button></div>
+          <div className="stage-footer"><div className="stage-identity"><div className="pet-name-row"><strong title={name}>{name}</strong><button className="rename-button" onClick={()=>setRenaming(pack)} aria-label={`给${name}改名`}><Pencil size={13}/>改名</button></div><span>{pack.description}</span></div><button className="round-button" onClick={()=>setFlipped(v=>!v)} aria-label="翻转预览"><RotateCcw size={16}/></button></div>
         </section>
         <div className="interaction-bar"><span>陪它玩一会儿</span><div>
           <button onClick={()=>void act('pet')}><Heart size={17}/>摸摸头</button><button onClick={()=>void act('happy')}><Coffee size={17}/>小零食</button><button onClick={()=>void act('sleepy')}><Moon size={17}/>打个盹</button><button onClick={()=>void act('celebrate')}><Sparkles size={17}/>庆祝一下</button>
@@ -75,7 +79,7 @@ export function App() {
       </>}
       {page==='wardrobe'&&<>
         <div className="wardrobe-toolbar"><span>{pets.length} 位伙伴 · 两种陪伴方式</span><button className="primary-button" disabled={importing} onClick={()=>fileInput.current?.click()}><Upload size={16}/>{importing?'正在整理…':'导入角色'}</button></div>
-        <div className="pet-grid">{pets.map(p=>{const current=p.id===pack.id;const s=p.skins[0];return <article className={`pet-card ${current?'selected':''}`} key={p.id}><div className="pet-card-image"><span className="pet-type">{p.renderer==='static'?'静态图片':'逐帧动画'}</span><PetRenderer pack={p} skin={s} size={190}/></div><div className="pet-card-body"><h2>{p.name}</h2><p>{p.description}</p><div className="pet-card-meta"><small>{p.skins.length} 套装扮 · {p.author}</small></div><div className="card-actions"><button className={current?'current-pet':'secondary-button'} disabled={current} onClick={()=>select(p)}>{current?<><Check size={16}/>正在陪伴</>:<>让它来陪我<ArrowUpRight size={15}/></>}</button>{p.id.startsWith('custom-')&&<button className="round-button" aria-label={`移除${p.name}`} onClick={()=>void perform(()=>removePet(p.id),'已移除导入的角色')}><Trash2 size={16}/></button>}</div></div></article>;})}</div>
+        <div className="pet-grid">{pets.map(p=>{const current=p.id===pack.id;const s=p.skins[0];const displayName=petDisplayName(p,prefs);return <article className={`pet-card ${current?'selected':''}`} key={p.id}><div className="pet-card-image"><span className="pet-type">{p.renderer==='static'?'静态图片':'逐帧动画'}</span><PetRenderer pack={p} skin={s} displayName={displayName} size={190}/></div><div className="pet-card-body"><div className="pet-name-row"><h2 title={displayName}>{displayName}</h2><button className="rename-button" onClick={()=>setRenaming(p)} aria-label={`给${displayName}改名`}><Pencil size={13}/>改名</button></div><p>{p.description}</p><div className="pet-card-meta"><small>{p.skins.length} 套装扮 · {p.author}</small></div><div className="card-actions"><button className={current?'current-pet':'secondary-button'} disabled={current} onClick={()=>select(p)}>{current?<><Check size={16}/>正在陪伴</>:<>让它来陪我<ArrowUpRight size={15}/></>}</button>{p.id.startsWith('custom-')&&<button className="round-button" aria-label={`移除${displayName}`} onClick={()=>void perform(()=>removePet(p.id),'已移除导入的角色')}><Trash2 size={16}/></button>}</div></div></article>;})}</div>
         <div className="import-guide"><Upload size={20}/><div><strong>带上你自己的伙伴</strong><p>选一张透明 PNG，或同时选择角色 JSON 清单和全部 PNG 图片。支持逐帧序列与精灵图，单次最多 12 MB。</p><small>角色包格式见项目内 docs/04-character-packs.md；原始图片会保留。</small></div></div>
       </>}
       {page==='settings'&&<div className="settings-stack">
@@ -94,6 +98,7 @@ export function App() {
     </main>
     <input ref={fileInput} className="visually-hidden" type="file" accept=".png,.json" multiple aria-label="选择角色图片或角色包文件" onChange={e=>void handleImport(Array.from(e.target.files||[]))}/>
     {notice&&<div className="toast" role="status"><Check size={16}/>{notice}</div>}
+    {renaming&&<PetNameDialog key={renaming.id} name={petDisplayName(renaming,prefs)} defaultName={petDefaultName(renaming,prefs)} hasCustomName={!!prefs.petNames?.[renaming.id]} onClose={()=>setRenaming(null)} onSave={async (next,nextDefault)=>{await renamePet(renaming.id,next,nextDefault);message(next===null&&nextDefault===undefined?'已恢复默认名字':'名字保存好了');}}/>}
   </div>;
 }
 function Setting({title,note,children}:{title:string;note:string;children:ReactNode}) {return <div className="setting-row"><div><strong>{title}</strong><p>{note}</p></div>{children}</div>;}

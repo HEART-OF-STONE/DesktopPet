@@ -2,6 +2,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { defaultSnapshot, type Snapshot, type Preferences, type PetPack, type Action, type HitRegion } from '../core/types';
 import { transitionTimer } from '../core/animation';
+import { normalizePetName } from '../core/petNames';
 
 export const desktop = isTauri();
 const key = 'desktop-pet-preview-v1';
@@ -29,6 +30,15 @@ export async function updatePreferences(patch: Partial<Preferences>): Promise<Sn
   if (desktop) return invoke('update_preferences', { patch });
   return browserCommit({ ...browserState, preferences: { ...browserState.preferences, ...patch } });
 }
+export async function renamePet(id: string, name: string | null, defaultName?: string): Promise<void> {
+  const snapshot = await getSnapshot();
+  const petNames = { ...snapshot.preferences.petNames };
+  const petDefaultNames = { ...snapshot.preferences.petDefaultNames };
+  if (defaultName !== undefined) petDefaultNames[id] = normalizePetName(defaultName);
+  if (name === null) delete petNames[id];
+  else petNames[id] = normalizePetName(name);
+  await updatePreferences({ petNames, petDefaultNames });
+}
 export async function timerAction(action: string, minutes?: number): Promise<Snapshot> {
   if (desktop) return invoke('timer_action', { action, minutes });
   return browserCommit({ ...browserState, timer: transitionTimer(browserState.timer, action, minutes) });
@@ -41,7 +51,9 @@ export async function addPet(pack: PetPack): Promise<Snapshot> {
 export async function removePet(id: string): Promise<Snapshot> {
   if (desktop) return invoke('remove_pet', { id });
   const prefs = browserState.preferences.petId === id ? { ...browserState.preferences, petId: 'doubao-static', skinId: 'cream' } : browserState.preferences;
-  return browserCommit({ ...browserState, preferences: prefs, customPets: browserState.customPets.filter(p => p.id !== id) });
+  const petNames = { ...prefs.petNames }; delete petNames[id];
+  const petDefaultNames = { ...prefs.petDefaultNames }; delete petDefaultNames[id];
+  return browserCommit({ ...browserState, preferences: { ...prefs, petNames, petDefaultNames }, customPets: browserState.customPets.filter(p => p.id !== id) });
 }
 export async function triggerAction(action: Action): Promise<void> {
   if (desktop) return invoke('trigger_action', { action });
