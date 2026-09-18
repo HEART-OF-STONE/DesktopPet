@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-preview-ambient"
+description = "Enables the preview_ambient command without any pre-configured scope."
+commands.allow = ["preview_ambient"]
+
+[[permission]]
+identifier = "deny-preview-ambient"
+description = "Denies the preview_ambient command without any pre-configured scope."
+commands.deny = ["preview_ambient"]

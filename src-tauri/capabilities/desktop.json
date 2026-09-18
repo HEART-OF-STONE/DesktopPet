@@ -2,5 +2,5 @@
   "identifier": "desktop",
   "description": "Local companion windows share state and controlled actions.",
   "windows": ["main", "pet"],
-  "permissions": ["core:default", "allow-get-snapshot", "allow-update-preferences", "allow-timer-action", "allow-trigger-action", "allow-begin-drag", "allow-update-hit-regions", "allow-desktop-action"]
+  "permissions": ["core:default", "allow-get-snapshot", "allow-update-preferences", "allow-timer-action", "allow-trigger-action", "allow-begin-drag", "allow-update-hit-regions", "allow-desktop-action", "allow-get-integrations"]
 }

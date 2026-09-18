@@ -1,0 +1,56 @@
+async (page) => {
+  const native=await page.context().browser().browserType().connectOverCDP('http://127.0.0.1:9223');
+  const pages=native.contexts().flatMap(c=>c.pages());const main=pages.find(p=>!p.url().includes('pet=true'));const pet=pages.find(p=>p.url().includes('pet=true'));
+  const errors=[];main.on('pageerror',e=>errors.push(e.message));pet.on('pageerror',e=>errors.push(e.message));
+  await pet.getByRole('button',{name:'桌宠任务状态',exact:true}).waitFor();
+  const before=await main.evaluate(()=>window.__TAURI_INTERNALS__.invoke('get_integrations'));
+  const signature=d=>JSON.stringify({today:d.today,week:d.week,tasks:d.tasks,balance:d.balance});
+  for(const [label,motion,status] of [['工作中','thinking','工作中'],['待确认','attention','等待确认'],['完成','celebrate','刚刚完成'],['失败','error','任务出错'],['低余额','attention','余额提醒']]){
+    await main.getByRole('button',{name:`演示${label}`,exact:true}).click();
+    await pet.locator(`.pet-art.action-${motion}`).waitFor();
+    await pet.getByRole('button',{name:'桌宠任务状态',exact:true}).filter({hasText:status}).waitFor();
+    await main.locator(`.agent-demo-preview .pet-art.action-${motion}`).waitFor();
+    await pet.locator('.pet-bubble').filter({hasText:'演示：'}).waitFor();
+  }
+  const after=await main.evaluate(()=>window.__TAURI_INTERNALS__.invoke('get_integrations'));
+  if(signature(before)!==signature(after))throw new Error('Demo changed real data');
+  await main.getByRole('button',{name:'演示待确认',exact:true}).click();
+  await pet.locator('.pet-art.action-attention').waitFor();
+  await main.getByRole('heading',{name:'Agent 看板',exact:true}).scrollIntoViewIfNeeded();
+  await main.screenshot({path:'output/playwright/agent-demo-panel.png'});
+  await pet.screenshot({path:'output/playwright/pet-status-waiting.png',omitBackground:true});
+  await pet.getByRole('button',{name:'桌宠任务状态',exact:true}).click();
+  await pet.getByRole('region',{name:'桌宠用量详情'}).waitFor();
+  await pet.screenshot({path:'output/playwright/pet-status-details.png',omitBackground:true});
+  const boxes=await pet.evaluate(()=>[...document.querySelectorAll('.pet-status-trigger,.pet-agent-card')].map(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:innerWidth,h:innerHeight};}));
+  if(boxes.some(b=>b.x<0||b.y<0||b.right>b.w||b.bottom>b.h))throw new Error('Status UI clipped by native window');
+  await main.getByRole('button',{name:'我的伙伴',exact:true}).click();
+  await pet.getByRole('button',{name:'打开完整看板',exact:true}).click();
+  await main.getByRole('heading',{name:'Agent 看板',exact:true}).waitFor();
+  await pet.getByRole('button',{name:'收起用量详情',exact:true}).click();
+  await main.getByRole('button',{name:'停止演示',exact:true}).click();
+  await pet.waitForFunction(()=>!document.querySelector('.pet-status-trigger')?.textContent?.includes('演示'));
+  await main.getByRole('button',{name:'安静陪伴',exact:true}).click();
+  await main.getByRole('button',{name:'演示完成',exact:true}).click();
+  await pet.getByRole('button',{name:'桌宠任务状态',exact:true}).filter({hasText:'免打扰'}).waitFor();
+  await pet.waitForTimeout(600);
+  if(await pet.locator('.pet-bubble').count()||!(await pet.locator('.pet-art.action-idle').count()))throw new Error('Demo ignored quiet mode');
+  await main.getByRole('button',{name:'停止演示',exact:true}).click();
+  await main.getByRole('button',{name:'免打扰中',exact:true}).click();
+  await main.getByLabel('桌宠常显样式').selectOption('compact');
+  await main.getByLabel('状态条附加指标').selectOption('quota');
+  await main.getByRole('button',{name:'保存连接设置',exact:true}).click();
+  await pet.locator('.pet-status-metric').filter({hasText:'剩余 76%'}).waitFor();
+  await main.getByLabel('显示桌宠任务与用量').uncheck();
+  await main.getByRole('button',{name:'保存连接设置',exact:true}).click();
+  await pet.waitForFunction(()=>!document.querySelector('.pet-status-trigger'));
+  await main.getByLabel('显示桌宠任务与用量').check();
+  await main.getByRole('button',{name:'保存连接设置',exact:true}).click();
+  await main.getByRole('button',{name:'演示工作中',exact:true}).click();
+  await pet.locator('.pet-art.action-thinking').waitFor();
+  await pet.waitForFunction(()=>!document.querySelector('.pet-status-trigger')?.textContent?.includes('演示'),null,{timeout:15000});
+  await main.getByRole('button',{name:'演示工作中',exact:true}).click();
+  await pet.locator('.pet-art.action-thinking').waitFor();
+  if(errors.length)throw new Error(errors.join('\n'));
+  return {passed:['five demo motions and synchronized status','demo does not modify statistics','bounded native layout','status detail and dashboard navigation','quiet mode','metric selection and hide toggle','demo auto expiry']};
+}

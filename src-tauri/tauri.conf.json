@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "DesktopPet",
-  "version": "0.1.1",
+  "version": "0.8.0",
   "identifier": "com.desktop-pet.companion",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -11,12 +11,21 @@
   },
   "app": {
     "windows": [
-      { "label": "main", "title": "桌边 · DesktopPet", "width": 1040, "height": 760, "minWidth": 800, "minHeight": 620, "center": true },
-      { "label": "pet", "url": "index.html?pet=true", "title": "豆包", "width": 400, "height": 430, "visible": false, "transparent": true, "decorations": false, "shadow": false, "resizable": false, "skipTaskbar": true, "alwaysOnTop": true, "focus": false }
+      { "label": "main", "title": "桌边 · DesktopPet", "width": 1040, "height": 760, "minWidth": 800, "minHeight": 620, "center": true, "visible": false },
+      { "label": "pet", "url": "index.html?pet=true", "title": "豆包", "width": 1000, "height": 720, "visible": false, "transparent": true, "decorations": false, "shadow": false, "resizable": false, "skipTaskbar": true, "alwaysOnTop": true, "focus": false }
     ],
     "security": {
       "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost http://127.0.0.1:1420 ws://127.0.0.1:1420; media-src 'self' blob:; object-src 'none'; frame-src 'none'; base-uri 'self'"
     }
   },
-  "bundle": { "active": true, "targets": ["nsis"], "icon": ["icons/icon.ico", "icons/icon.png"] }
+  "bundle": {
+    "active": true, "targets": ["nsis"], "icon": ["icons/icon.ico", "icons/icon.png"], "useLocalToolsDir": true,
+    "resources": {
+      "../LICENSE": "LICENSE", "../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
+      "../THIRD_PARTY_LICENSES.txt": "THIRD_PARTY_LICENSES.txt", "../licenses/DeepSeek-Balance-Whale-Widget-MIT.txt": "DeepSeek-Balance-Whale-Widget-MIT.txt",
+      "../scripts/send-agent-event.ps1": "send-agent-event.ps1", "../scripts/codex-hook.ps1": "codex-hook.ps1",
+      "../docs/08-sharing.md": "START-HERE.md", "../docs/07-agent-guide.md": "AGENT-GUIDE.md", "../docs/04-character-packs.md": "CHARACTER-GUIDE.md"
+    },
+    "windows": { "nsis": { "installMode": "currentUser", "languages": ["SimpChinese", "English"], "displayLanguageSelector": false, "installerHooks": "installer-hooks.nsh" } }
+  }
 }

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-inbox"
+description = "Enables the update_inbox command without any pre-configured scope."
+commands.allow = ["update_inbox"]
+
+[[permission]]
+identifier = "deny-update-inbox"
+description = "Denies the update_inbox command without any pre-configured scope."
+commands.deny = ["update_inbox"]

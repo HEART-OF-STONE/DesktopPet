@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { frameAt } from '../core/animation';
-import type { Action, HitRegion, PetPack, Skin } from '../core/types';
+import type { PetMotion, HitRegion, PetPack, Skin } from '../core/types';
 
 interface Props {
-  pack: PetPack; skin: Skin; action?: Action; sequence?: number; size?: number;
+  pack: PetPack; skin: Skin; action?: PetMotion; sequence?: number; size?: number;
   pressed?: boolean; flipped?: boolean; paused?: boolean; onRegions?: (regions: HitRegion[]) => void;
   displayName?: string;
 }
@@ -11,12 +11,25 @@ export function PetRenderer({pack, skin, action='idle', sequence=0, size=256, pr
   const canvas = useRef<HTMLCanvasElement>(null);
   const callback = useRef(onRegions); callback.current = onRegions;
   const [error,setError] = useState('');
+  const [pixelRatio,setPixelRatio]=useState(()=>window.devicePixelRatio||1);
+  const ratio=Math.min(size/pack.width,size/pack.height);
+  const density=Math.min(Math.max(pixelRatio,1),4,2048/Math.max(pack.width*ratio,pack.height*ratio));
+  const bufferWidth=Math.max(1,Math.round(pack.width*ratio*density)),bufferHeight=Math.max(1,Math.round(pack.height*ratio*density));
+  useEffect(()=>{
+    let query:MediaQueryList;
+    const refresh=()=>{const dpr=window.devicePixelRatio||1;setPixelRatio(dpr);query?.removeEventListener('change',refresh);query=window.matchMedia(`(min-resolution: ${dpr-0.001}dppx) and (max-resolution: ${dpr+0.001}dppx)`);query.addEventListener('change',refresh);};
+    refresh();window.addEventListener('resize',refresh);
+    return()=>{query.removeEventListener('change',refresh);window.removeEventListener('resize',refresh);};
+  },[]);
   useEffect(() => {
     const element = canvas.current!;
     const context = element.getContext('2d', {willReadFrequently:true})!;
+    context.setTransform(bufferWidth/pack.width,0,0,bufferHeight/pack.height,0,0);
+    context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
     let cancelled=false, animation=0, start=performance.now(), pauseAt=0, lastFrame=-1, lastReport=0;
     let regions: HitRegion[]=[];
-    let currentClip = pack.actions[action] || pack.actions.idle;
+    const clipAction=action==='thinking'||action==='look'||action==='stroll'?'idle':action==='attention'||action==='stretch'?'pet':action==='error'||action==='doze'?'sleepy':action;
+    let currentClip = pack.actions[clipAction] || pack.actions.idle;
     const resources=new Map<string,HTMLImageElement>();
     const maskCanvas=document.createElement('canvas'); maskCanvas.width=32; maskCanvas.height=32;
     const maskContext=maskCanvas.getContext('2d',{willReadFrequently:true})!;
@@ -28,6 +41,9 @@ export function PetRenderer({pack, skin, action='idle', sequence=0, size=256, pr
     };
     const draw = (time:number) => {
       if (cancelled) return;
+      // WebView2 may change DPR without a media/resize event; reuse the pet's existing draw loop.
+      const currentDpr=window.devicePixelRatio||1;
+      if(Math.abs(currentDpr-pixelRatio)>0.001){setPixelRatio(currentDpr);return;}
       if (document.hidden || paused) { if (!pauseAt) pauseAt=time; animation=requestAnimationFrame(draw); return; }
       if (pauseAt) { start+=time-pauseAt; pauseAt=0; }
       const result=frameAt(currentClip,time-start);
@@ -64,10 +80,9 @@ export function PetRenderer({pack, skin, action='idle', sequence=0, size=256, pr
       const image=new Image(); image.onload=()=>{resources.set(key,image);resolve();}; image.onerror=()=>reject(new Error('图片加载失败')); image.src=skin.assets[key];
     }))).then(()=>{if(!cancelled){start=performance.now(); animation=requestAnimationFrame(draw);}}).catch(e=>!cancelled&&setError(String(e)));
     return ()=>{cancelled=true;cancelAnimationFrame(animation);resources.clear();clipCache.clear();};
-  },[pack,skin,action,sequence,flipped,paused]);
-  const ratio=Math.min(size/pack.width,size/pack.height);
-  return <div className={`pet-art action-${action} ${pressed?'is-pressed':''}`} style={{width:pack.width*ratio,height:pack.height*ratio}}>
-    <canvas ref={canvas} width={pack.width} height={pack.height} role="img" aria-label={`${displayName}，${pack.renderer==='static'?'静态图片':'逐帧动画'}`} />
+  },[pack,skin,action,sequence,flipped,paused,bufferWidth,bufferHeight,pixelRatio]);
+  return <div key={`${action}:${sequence}`} className={`pet-art action-${action} ${pressed?'is-pressed':''}`} style={{width:pack.width*ratio,height:pack.height*ratio}}>
+    <canvas ref={canvas} width={bufferWidth} height={bufferHeight} role="img" aria-label={`${displayName}，${pack.renderer==='static'?'静态图片':'逐帧动画'}`} />
     {error&&<span className="asset-error">图片暂时无法显示</span>}
   </div>;
 }

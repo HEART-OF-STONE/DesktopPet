@@ -1,0 +1,61 @@
+import { useEffect, useState } from 'react';
+import { Activity, RefreshCw, Link2, ShieldCheck } from 'lucide-react';
+import { useSubscription } from './core/hooks';
+import { emptyIntegrations, getIntegrations, integrationCommand, numberLabel as n, compactNumber, quotaDuration, quotaWindows, quotaName, quotaObservation, timeLabel, type IntegrationSettings, type IntegrationSnapshot } from './core/integrations';
+import { desktop } from './platform/bridge';
+import { AgentDemoPanel, type AgentDemoProps } from './AgentDemoPanel';
+import { ConnectionAssistant } from './ConnectionAssistant';
+import { CostPanel } from './CostPanel';
+import { QuotaRefreshNote } from './QuotaRefreshNote';
+
+const labels:Record<string,string>={running:'运行中',completed:'已完成',failed:'失败',waiting:'待确认',interrupted:'已中断'};
+export function AgentDashboard(props:AgentDemoProps){
+  const [data,setData]=useState(emptyIntegrations);const [draft,setDraft]=useState<IntegrationSettings|null>(null);const [error,setError]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);const [key,setKey]=useState('');
+  useEffect(()=>{let active=true;getIntegrations().then(v=>active&&setData(v)).catch(e=>active&&setError(String(e)));return()=>{active=false;};},[]);
+  useSubscription<IntegrationSnapshot>('integrations-changed',setData);
+  const settings=draft||data.settings;const edit=(patch:Partial<IntegrationSettings>)=>setDraft({...settings,...patch});
+  async function run(command:string,args:Record<string,unknown>,success:string){setBusy(true);setError('');setMessage('');try{const value=await integrationCommand(command,args);setData(value);if(command==='update_integrations')setDraft(null);if(command==='set_deepseek_key')setKey('');setMessage(success);}catch(e){setError(String(e));}finally{setBusy(false);}}
+  const b=data.balance;const q=data.quota;const today=new Date().toLocaleDateString('sv-SE');
+  const quotaCooling=(data.quotaRefresh?.manualAvailableAt||0)>Date.now();
+  const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toLocaleDateString('sv-SE');});
+  const max=Math.max(1,...Object.values(data.days));const active=data.tasks.filter(t=>['running','waiting'].includes(t.status)&&Date.now()-t.updatedAt<30*60000).length;
+  return <div className="agent-dashboard">
+    <div className="agent-toolbar"><span className="status-pill"><i/>{desktop?'本机数据 · 每 10 秒读取':'桌面版可连接'}</span><button className="secondary-button" disabled={busy||!desktop} onClick={()=>void run('refresh_integrations',{live:false},'已刷新；各数据源的结果见下方。')}><RefreshCw size={15} className={busy?'spin':''}/>{busy?'处理中…':'刷新数据'}</button></div>
+    <AgentDemoPanel {...props}/>
+    <ConnectionAssistant data={data} disabled={busy} pending={!!draft} run={run}/>
+    {error&&<div role="alert" className="error-banner">{error}</div>}{message&&<p role="status" className="agent-success">{message}</p>}
+    {data.scanPending&&<p className="agent-warning">正在补读历史，当前统计尚未完整。优先读取最新会话，后台会继续分批更新。</p>}
+    <div className="agent-metrics">
+      <Metric label="今日 token" value={data.scanAt||data.retainedRecords?n(data.today.total):'—'} note="输入 + 输出，按本地日期"/>
+      <Metric label="近 7 天 token" value={data.scanAt||data.retainedRecords?n(data.week.total):'—'} note={`保留 ${n(data.retainedRecords)} 条增量记录`}/>
+      <Metric label="最近活跃任务" value={String(active)} note="30 分钟内最后观察到的状态"/>
+      <Metric label="DeepSeek 余额" value={b.total===null?'—':`${b.currency} ${b.total.toFixed(2)}`} note={b.configured?`更新 ${timeLabel(b.updatedAt)}`:'尚未配置 API Key'}/>
+    </div>
+    <CostPanel data={data} onData={setData}/>
+    <div className="agent-columns">
+      <section className="panel agent-panel"><h2><Activity size={18}/>近 7 天用量</h2><div className="usage-chart" aria-label="近七天 token 柱状图">{days.map(day=><div key={day} className={day===today?'today':''}><span title={`${n(data.days[day]||0)} tokens`}>{compactNumber(data.days[day]||0)}</span><i style={{height:`${Math.max(2,(data.days[day]||0)/max*90)}px`}}/><small>{day.slice(5)}</small></div>)}</div><p className="agent-note">今日输入 {n(data.today.input)} · 输出 {n(data.today.output)}<br/>其中缓存 {n(data.today.cached)} · 推理 {n(data.today.reasoning)}（已包含，不重复相加）</p><div className="model-list">{Object.entries(data.models).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([model,total])=><div key={model}><span title={model}>{model}</span><strong>{n(total)}</strong></div>)}{!Object.keys(data.models).length&&<p className="agent-empty">连接后显示模型分布。</p>}</div></section>
+      <section className="panel agent-panel"><h2>Codex 订阅额度</h2><QuotaRefreshNote data={data}/><p className="agent-note">主额度优先，其他模型额度单独显示。5 小时、7 天等窗口按实际返回数据展示；未返回的窗口不推算。日志可能只更新其中一类额度，各项时间分别记录。</p>{quotaWindows(q).map(w=><div className="quota-window" key={`${w.bucket}:${w.label}`}><div><span>{quotaName(w)} · {quotaDuration(w.windowMinutes)}</span><strong>剩余 {Math.max(0,100-w.usedPercent).toFixed(0)}%</strong></div><progress max="100" value={100-w.usedPercent} aria-label={`${quotaName(w)} ${quotaDuration(w.windowMinutes)}剩余额度`}/><small>{quotaObservation(w,Date.now())}<br/>重置于 {timeLabel(w.resetsAt)}</small></div>)}{!q.windows.length&&<p className="agent-empty">暂无额度窗口。订阅额度与 API 余额分别统计，缺失时不会显示为 0。</p>}{q.error&&<p className="agent-warning">{q.error}</p>}<button className="secondary-button" disabled={busy||!desktop||!data.settings.codexEnabled||quotaCooling} onClick={()=>void run('refresh_integrations',{live:true},'已检查额度；冷却期间沿用最近结果，查询时间见上方。')}>{quotaCooling?'查询冷却中':'查询实时额度'}</button></section>
+    </div>
+    <section className="panel agent-panel"><h2>任务动态 <small>最后观察到的状态</small></h2><p className="agent-note">Codex 日志可能延迟写入；超过 30 分钟的运行状态显示为“待核实”。审批提醒需要接入事件钩子。</p><div className="task-list">{data.tasks.slice(0,12).map(t=><div className="agent-task" key={t.id}><span className={`task-state ${t.status}`}>{['running','waiting'].includes(t.status)&&Date.now()-t.updatedAt>=30*60000?'待核实':labels[t.status]||'未知'}</span><div><strong>{t.source}</strong><small title={`${t.sessionId} / ${t.turnId}`}>{t.sessionId.slice(0,18)} · {t.turnId.slice(0,12)}</small></div><span>{t.tokens===null?'用量未记录':`${n(t.tokens)} tokens`}</span><time>{timeLabel(t.updatedAt)}</time></div>)}{!data.tasks.length&&<p className="agent-empty">还没有观察到任务。开启 Codex 采集或连接其它 Agent 后，这里会显示任务动态。</p>}</div></section>
+    <section className="panel agent-panel"><h2>余额与今日变化</h2>{b.error&&<p className="agent-warning">{b.error}，保留上次成功结果。</p>}<div className="balance-detail"><div><small>今日观测到的余额下降</small><strong>{b.updatedAt?`${b.currency} ${b.todayDecrease.toFixed(4)}`:'—'}</strong></div><div><small>赠送余额</small><strong>{b.granted===null?'—':b.granted.toFixed(2)}</strong></div><div><small>充值余额</small><strong>{b.toppedUp===null?'—':b.toppedUp.toFixed(2)}</strong></div></div><p className="agent-note">余额每 60 秒查询一次。余额下降包含账户其它应用的消耗；充值、赠送金到期和采样间隔会影响结果，不能视为当前任务的费用。跨日首次读取只建立基线。{b.available===false?'账户当前不可用。':''}</p>{b.history.length>0&&<details><summary>最近 30 次余额记录</summary><div className="balance-history">{b.history.map((r,i)=><div key={`${r.at}:${i}`}><time>{timeLabel(r.at)}</time><span>{r.currency} {r.total.toFixed(4)}</span><span>下降 {r.decrease.toFixed(4)}</span></div>)}</div></details>}</section>
+    <section className="panel agent-panel connection-panel"><h2><Link2 size={18}/>连接与提醒</h2><fieldset disabled={busy||!desktop}>
+      <CheckSetting label="显示桌宠任务与用量" checked={settings.showPetStatus} change={v=>edit({showPetStatus:v})}/>
+      <label>桌宠常显样式<select aria-label="桌宠常显样式" value={settings.petLayout||'side'} onChange={e=>edit({petLayout:e.target.value as 'side'|'bottom'|'compact'})}><option value="side">侧边数据签（推荐）</option><option value="bottom">底部双行底座</option><option value="compact">简洁状态条</option></select></label>
+      <p className="agent-note">侧边数据签常显 Codex 主额度、今日美元预估和今日 Token；周额度与 5h 同时存在时左右并排。点击数据区域可查看完整详情。</p>
+      <label>状态条附加指标<select aria-label="状态条附加指标" value={settings.petMetric} onChange={e=>edit({petMetric:e.target.value as IntegrationSettings['petMetric']})}><option value="none">只显示任务状态（默认）</option><option value="tokens">今日 token</option><option value="estimate">今日美元预估</option><option value="quota">Codex 额度</option><option value="balance">DeepSeek 余额</option></select></label>
+      <p className="agent-note">附加指标仅用于简洁状态条。多任务时优先显示待确认，其次为近期失败、运行中和刚完成。日志状态超过 30 分钟未更新会标为待核实。</p>
+      <div className="agent-separator"/>
+      <CheckSetting label="读取 Codex 本地任务与用量" checked={settings.codexEnabled} change={v=>edit({codexEnabled:v})}/>
+      <label>Codex 数据目录<input aria-label="Codex 数据目录" placeholder={data.detectedHome||'留空使用 CODEX_HOME 或用户目录下的 .codex'} value={settings.codexHome} onChange={e=>edit({codexHome:e.target.value})}/></label><p className="agent-note">当前目录：{data.detectedHome||'桌面版自动检测'}<br/>读取 {data.scannedFiles} 个文件 · 最后成功 {timeLabel(data.scanAt)} · {data.settings.codexEnabled?'采集开启':'采集已暂停'}<br/>只保存任务标识、模型、状态和数值用量，不保存聊天正文。更换目录会清除旧 Codex 统计并重新读取。</p>{data.scanError&&<p className="agent-warning">{data.scanError}</p>}
+      <details><summary>Codex 实时查询设置</summary><label>codex.exe 路径（可选）<input value={settings.codexExecutable} onChange={e=>edit({codexExecutable:e.target.value})} placeholder="自动查找已安装的 Codex CLI"/></label><p className="agent-note">查询使用该 CLI 的认证状态。桌面版登录态可能未共享；查询失败仍可使用日志快照。桌宠不会启动或恢复你的 Agent 任务。</p></details>
+      <CheckSetting label="启用其它 Agent 的本地事件接口" checked={settings.bridgeEnabled} change={v=>edit({bridgeEnabled:v})}/><p className="agent-note">仅监听本机，使用随机访问令牌。连接文件：<code>{data.bridgeFile||'桌面应用启动后生成'}</code><br/>用发布包中的 send-agent-event.ps1 发送事件；Codex 审批通知可用 codex-hook.ps1。接入步骤见 AGENT-GUIDE.md。</p>
+      <div className="agent-separator"/><CheckSetting label="自动查询 DeepSeek 余额" checked={settings.deepseekEnabled} change={v=>edit({deepseekEnabled:v})}/>
+      <div className="agent-form-row"><label>低余额阈值（{b.currency||'账户币种'}）<input type="number" min="0" max="1000000" step="0.1" value={settings.lowBalance} onChange={e=>edit({lowBalance:Number(e.target.value)})}/></label><label>每日余额下降预算（0 关闭）<input type="number" min="0" max="1000000" step="0.1" value={settings.dailyBudget} onChange={e=>edit({dailyBudget:Number(e.target.value)})}/></label></div>
+      <div className="agent-form-row"><CheckSetting label="任务完成提醒" checked={settings.notifyCompleted} change={v=>edit({notifyCompleted:v})}/><CheckSetting label="任务失败提醒" checked={settings.notifyFailed} change={v=>edit({notifyFailed:v})}/><CheckSetting label="待确认提醒" checked={settings.notifyApproval} change={v=>edit({notifyApproval:v})}/></div>
+      <label>完成气泡文案<input aria-label="完成气泡文案" maxLength={160} value={settings.completionTemplate} onChange={e=>edit({completionTemplate:e.target.value})}/></label><p className="agent-note">可用变量：{'{source}'}、{'{tokens}'}。免打扰时丢弃提醒，退出免打扰后不会重放。</p>
+      <button className="primary-button" disabled={!draft} onClick={()=>void run('update_integrations',{settings},'连接设置已保存，采集将在下次轮询更新。')}>保存连接设置</button>{draft&&<button className="text-button" onClick={()=>setDraft(null)}>撤销修改</button>}
+    </fieldset><div className="agent-separator"/><h3><ShieldCheck size={17}/>DeepSeek API Key</h3><p className="agent-note">{b.configured?'已保存到 Windows 凭据管理器。':'尚未配置。'}密钥不写入 JSON、导出文件或角色包。更换 / 移除密钥会清除旧账户余额记录。</p><div className="key-row"><input aria-label="DeepSeek API Key" type="password" autoComplete="off" value={key} disabled={busy||!desktop} onChange={e=>setKey(e.target.value)} placeholder="粘贴 API Key，仅用于余额查询"/><button className="secondary-button" disabled={busy||!desktop||!key||!!draft} onClick={()=>void run('set_deepseek_key',{key},'密钥已保存，并开启余额查询。')}>保存密钥</button>{b.configured&&<button className="text-button" disabled={busy||!!draft} onClick={()=>void run('set_deepseek_key',{key:null},'密钥与旧账户余额记录已移除。')}>移除密钥</button>}</div>{draft&&<p className="agent-note">请先保存或撤销连接设置，再更换密钥。</p>}</section>
+  </div>;
+}
+function Metric({label,value,note}:{label:string;value:string;note:string}){return <div className="agent-metric"><small>{label}</small><strong>{value}</strong><span>{note}</span></div>;}
+function CheckSetting({label,checked,change}:{label:string;checked:boolean;change:(v:boolean)=>void}){return <label className="agent-check"><input type="checkbox" checked={checked} onChange={e=>change(e.target.checked)}/>{label}</label>;}

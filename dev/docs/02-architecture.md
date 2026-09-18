@@ -1,6 +1,15 @@
 # 技术架构与关键验证
 
-状态：已按 Tauri 2 + React + TypeScript 建立 v0.1.0 可运行原型；本文保留 V1 目标架构，未完成部分不代表现有功能。实际协议见 `04-character-packs.md`，测试证据见 `05-implementation-status.md`。
+状态：已按 Tauri 2 + React + TypeScript 建立 v0.1.0 可运行原型；本文保留 V1 目标架构，未完成部分不代表现有功能。实际协议见 [角色包说明](../../docs/04-character-packs.md)，测试证据见 `05-implementation-status.md`。
+
+### v0.5.0 增量
+
+- 收件箱与任务通知同一持久化事务保存，复用 `integrations-changed` 快照，无新增轮询；90 天 / 300 条上限。
+- `backup.rs` 导出类型化偏好及内嵌 PNG 角色，恢复前校验资源、版本、边界与引用；一个持久化撤销点，仅替换角色与偏好。
+- `system.rs` 管理当前用户 Run 启动项与公开 GitHub Releases 手动查询。启动项以应用标识隔离；`--autostart` 隐藏管理窗口。更新配置独立保存，不包含密钥，不自动下载。
+- NSIS 当前用户安装包只携带允许的资源；安装 Hook 修复已启用的启动位置，卸载 Hook 只清理指向本安装目录的启动项。正式发布源、签名和系统矩阵仍待验收。
+
+以下为早期原型与目标设计记录，实际交付以当前 Todo 和实现记录为准。
 
 ### v0.1.0 实现说明
 

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 // Original vector artwork. Raster exports exercise exactly the same PNG pipeline as imported pets.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const actions = ['idle', 'pet', 'happy', 'sleepy', 'drag', 'celebrate'];
+const frameSize=768,columns=4;
 function cat(color, action = 'idle', frame = 0) {
   const phase = frame / 12 * Math.PI * 2;
   const bounce = action === 'happy' || action === 'celebrate' ? Math.abs(Math.sin(phase)) * -12 : Math.sin(phase) * 2;
@@ -32,10 +33,10 @@ function cat(color, action = 'idle', frame = 0) {
 }
 for (const [skin,color] of [['cream','#eee2c8'],['sage','#c1d1b6']]) {
   const dir=path.join(root,'public','pets',skin); await mkdir(dir,{recursive:true});
-  await sharp(Buffer.from(cat(color))).png().toFile(path.join(dir,'portrait.png'));
+  await sharp(Buffer.from(cat(color)),{density:216}).png().toFile(path.join(dir,'portrait.png'));
   for (const action of actions) {
-    const frames=await Promise.all(Array.from({length:12},async(_,i)=>({input:await sharp(Buffer.from(cat(color,action,i))).png().toBuffer(),left:i*256,top:0})));
-    await sharp({create:{width:3072,height:256,channels:4,background:{r:0,g:0,b:0,alpha:0}}}).composite(frames).png().toFile(path.join(dir,`${action}.png`));
+    const frames=await Promise.all(Array.from({length:12},async(_,i)=>({input:await sharp(Buffer.from(cat(color,action,i)),{density:216}).png().toBuffer(),left:(i%columns)*frameSize,top:Math.floor(i/columns)*frameSize})));
+    await sharp({create:{width:columns*frameSize,height:3*frameSize,channels:4,background:{r:0,g:0,b:0,alpha:0}}}).composite(frames).png().toFile(path.join(dir,`${action}.png`));
   }
 }
 const icons=path.join(root,'src-tauri','icons'); await mkdir(icons,{recursive:true});

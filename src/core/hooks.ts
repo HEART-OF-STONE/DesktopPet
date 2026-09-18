@@ -31,17 +31,20 @@ export function useCompanion(preferences?: Preferences, soundEnabled=true) {
   const [bubble, setBubble] = useState('');
   const [sequence, setSequence] = useState(0);
   const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const actionTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const previous = useRef('');
   function play(next: Action) {
     if (soundEnabled && preferences?.sound && !preferences.quiet && next!=='idle') softChime(preferences.volume);
     clearTimeout(timeout.current);
+    clearTimeout(actionTimeout.current);
     setAction(next); setSequence(s => s + 1);
     const choices = lines[next].filter(line => line !== previous.current);
     const line = choices[Math.floor(Math.random() * choices.length)] || lines[next][0];
     previous.current = line; setBubble(line);
+    if(next==='drag')actionTimeout.current=setTimeout(()=>setAction('idle'),220);
     timeout.current = setTimeout(() => { setAction('idle'); setBubble(''); }, next === 'sleepy' ? 7000 : 4200);
   }
   useSubscription<Action>('pet-action', play);
-  useEffect(() => () => clearTimeout(timeout.current), []);
+  useEffect(() => () => {clearTimeout(timeout.current);clearTimeout(actionTimeout.current);}, []);
   return { action, bubble, sequence, play, dismiss: () => setBubble('') };
 }

@@ -1,4 +1,5 @@
 {
   "identifier": "com.desktop-pet.rename-test",
-  "productName": "DesktopPet Rename Test"
+  "productName": "DesktopPet Rename Test",
+  "app": {"security":{"capabilities":["desktop","management",{"identifier":"desktop-test-controls","windows":["main","pet"],"permissions":["core:window:allow-set-position","core:window:allow-set-fullscreen","core:window:allow-set-focus","core:window:allow-maximize","core:window:allow-unmaximize"]}]}}
 }

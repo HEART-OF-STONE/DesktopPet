@@ -1,0 +1,16 @@
+stackback 0.0.2 is a development-only dependency of the test runner.
+It is not distributed as application code in the DesktopPet installer or ZIP.
+
+The published package.json declares:
+  license: MIT
+  author: Roman Shtylman <shtylman@gmail.com>
+  repository: git://github.com/shtylman/node-stackback.git
+
+Exact package source: https://registry.npmjs.org/stackback/-/stackback-0.0.2.tgz
+Repository: https://github.com/shtylman/node-stackback
+Standard MIT terms: https://opensource.org/license/mit
+
+Neither the installed package nor the inspected upstream repository provides
+a standalone license text. This is a record of the upstream declaration,
+not an invented upstream copyright notice or a new grant of rights.
+Recheck upstream notices before ever redistributing this build tool itself.

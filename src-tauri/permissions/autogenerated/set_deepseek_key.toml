@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-deepseek-key"
+description = "Enables the set_deepseek_key command without any pre-configured scope."
+commands.allow = ["set_deepseek_key"]
+
+[[permission]]
+identifier = "deny-set-deepseek-key"
+description = "Denies the set_deepseek_key command without any pre-configured scope."
+commands.deny = ["set_deepseek_key"]

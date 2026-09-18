@@ -26,6 +26,7 @@ export async function subscribe<T>(topic: string, fn: (value: T) => void): Promi
   return () => window.removeEventListener(topic, listener);
 }
 export const getSnapshot = () => desktop ? invoke<Snapshot>('get_snapshot') : Promise.resolve(browserState);
+export async function previewAmbient(kind:string){if(desktop)return invoke<void>('preview_ambient',{kind});window.dispatchEvent(new CustomEvent('ambient-preview',{detail:kind}));}
 export async function updatePreferences(patch: Partial<Preferences>): Promise<Snapshot> {
   if (desktop) return invoke('update_preferences', { patch });
   return browserCommit({ ...browserState, preferences: { ...browserState.preferences, ...patch } });
@@ -65,7 +66,7 @@ export async function desktopAction(action: string): Promise<void> {
   if (action === 'reset-position') await updatePreferences({ petVisible: true });
 }
 export const beginDrag = () => invoke('begin_drag');
-export const reportHitRegions = (regions: HitRegion[]) => desktop ? invoke('update_hit_regions', { regions }) : Promise.resolve();
+export const reportHitRegions = (regions: HitRegion[],placement?:HitRegion,reposition=false,anchor?:HitRegion) => desktop ? invoke<HitRegion>('update_hit_regions', { regions,placement,reposition,anchor }) : Promise.resolve(undefined);
 if (!desktop) setInterval(() => {
   const next = transitionTimer(browserState.timer, 'tick');
   if (next !== browserState.timer) { try { browserCommit({ ...browserState, timer: next }); } catch { /* UI can still stop/reset the timer. */ } }

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-price-rates"
+description = "Enables the update_price_rates command without any pre-configured scope."
+commands.allow = ["update_price_rates"]
+
+[[permission]]
+identifier = "deny-update-price-rates"
+description = "Denies the update_price_rates command without any pre-configured scope."
+commands.deny = ["update_price_rates"]

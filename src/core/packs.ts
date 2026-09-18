@@ -3,7 +3,7 @@ import { ACTIONS, type PetPack, type Clip } from './types';
 const colors = [{ id: 'cream', name: '奶油白', color: '#e9dcc3' }, { id: 'sage', name: '鼠尾草', color: '#a9bea3' }];
 const clips = (sprite: boolean): PetPack['actions'] => Object.fromEntries(ACTIONS.map(action => [action, {
   frames: Array.from({ length: sprite ? 12 : 1 }, (_, i) => sprite
-    ? { asset: action, x: i * 256, y: 0, width: 256, height: 256 }
+    ? { asset: action, x: (i % 4) * 768, y: Math.floor(i / 4) * 768, width: 768, height: 768 }
     : { asset: 'portrait' }),
   fps: 12, loop: action === 'idle' || action === 'sleepy' || action === 'drag',
 }])) as PetPack['actions'];
@@ -69,6 +69,7 @@ export function validatePack(input: unknown, assets: Record<string, string>): Pe
 
 export async function importFiles(files: File[]): Promise<PetPack> {
   assert(files.length > 0 && files.length <= 40, '一次最多选择 40 个文件');
+  assert(files.every(file=>/\.(png|json)$/i.test(file.name)), '角色导入只接收 PNG 和角色 JSON，请移除说明或开发文件');
   assert(files.reduce((sum, file) => sum + file.size, 0) <= 12 * 1024 * 1024, '角色包总大小不能超过 12 MB');
   assert(new Set(files.map(f => f.name)).size === files.length, '图片文件名不能重复');
   const assets: Record<string, string> = {};
