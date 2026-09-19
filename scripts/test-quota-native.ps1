@@ -1,4 +1,4 @@
-param([switch]$SidePanel,[switch]$BottomPanel,[switch]$Placement,[switch]$DesktopExperience)
+param([switch]$SidePanel,[switch]$BottomPanel,[switch]$Placement,[switch]$DesktopExperience,[switch]$Updater)
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 $root = Split-Path $PSScriptRoot -Parent
@@ -26,7 +26,7 @@ try {
     foreach ($pass in @('initial','restart')) {
         $app = Start-Process -FilePath (Join-Path $root 'src-tauri/target/debug/desktop-pet.exe') -WindowStyle Hidden -PassThru
         Start-Sleep -Seconds 3
-        $script = if ($DesktopExperience) { 'scripts/native-desktop-experience.js' } elseif ($Placement) { 'scripts/native-placement-smoke.js' } elseif ($BottomPanel) { 'scripts/native-bottompanel-smoke.js' } elseif ($SidePanel) { 'scripts/native-sidepanel-smoke.js' } else { 'scripts/native-quota-smoke.js' }
+        $script = if ($Updater) { 'scripts/native-updater-smoke.js' } elseif ($DesktopExperience) { 'scripts/native-desktop-experience.js' } elseif ($Placement) { 'scripts/native-placement-smoke.js' } elseif ($BottomPanel) { 'scripts/native-bottompanel-smoke.js' } elseif ($SidePanel) { 'scripts/native-sidepanel-smoke.js' } else { 'scripts/native-quota-smoke.js' }
         try {
             $PSNativeCommandUseErrorActionPreference = $false
             $result = & npx --yes --package '@playwright/cli' playwright-cli -s=quota-native run-code --filename $script 2>&1

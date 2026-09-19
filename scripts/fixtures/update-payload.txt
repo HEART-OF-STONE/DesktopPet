@@ -1,0 +1,1 @@
+DesktopPet signed download test fixture. This text is not an installer.

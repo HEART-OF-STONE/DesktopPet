@@ -274,6 +274,7 @@ fn start_services(app: tauri::AppHandle) {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _| {if !args.iter().any(|a|a=="--autostart"){show_main(app)}}))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             get_snapshot, update_preferences, timer_action, add_pet, remove_pet, trigger_action, preview_ambient,
             begin_drag, update_hit_regions, desktop_action, get_integrations, update_integrations, refresh_integrations,
@@ -281,7 +282,8 @@ fn main() {
             integrations::inbox::update_inbox, backup::export_backup, backup::preview_backup, backup::restore_backup,
             integrations::pricing::update_price_rates,
             backup::undo_restore, backup::backup_status, system::get_system_status, system::set_startup,
-            system::set_update_source, system::check_update, system::open_release_page
+            system::set_update_source, system::check_update, system::open_release_page,
+            system::set_automatic_updates, system::download_update, system::install_update
         ])
         .setup(|app| {
             let directory = std::env::var_os("DESKTOPPET_DATA_DIR").map(PathBuf::from).unwrap_or(app.path().app_data_dir()?);

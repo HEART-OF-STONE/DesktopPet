@@ -5,7 +5,7 @@ async(page)=>{
   const invoke=(command,args={})=>main.evaluate(({command,args})=>window.__TAURI_INTERNALS__.invoke(command,args),{command,args});
   await main.waitForFunction(async()=>(await window.__TAURI_INTERNALS__.invoke('get_integrations')).quota.windows.length===4);
   const initial=(await invoke('get_integrations')).settings.petLayout;
-  await invoke('update_preferences',{patch:{ambientEnabled:false,quiet:false,scale:1,petVisible:true,bubbleOffsetX:0,bubbleOffsetY:0}});
+  await invoke('update_preferences',{patch:{ambientEnabled:false,quiet:false,scale:1,panelScale:1,petVisible:true,bubbleOffsetX:0,bubbleOffsetY:0}});
   await main.getByRole('button',{name:'偏好设置',exact:true}).click();
   await main.getByLabel('数据框样式',{exact:true}).selectOption('bottom');
   await pet.locator('.pet-bottom-panel').waitFor();
@@ -24,6 +24,19 @@ async(page)=>{
   await pet.evaluate(()=>document.body.style.setProperty('background','#fff','important'));
   await pet.locator('.pet-layout').screenshot({path:'output/playwright/bottompanel-dual.png'});
   await pet.locator('.pet-bottom-panel').screenshot({path:'output/playwright/bottompanel-card.png'});
+  const full=JSON.parse(JSON.stringify(fixture));full.estimate.today.usd=101.42;full.today.total=64158000;full.quota.windows.forEach(w=>w.usedPercent=0);
+  const checkPercent=async()=>{
+    const values=await pet.locator('.pet-summary-quota>strong').evaluateAll(els=>els.map(e=>{const range=document.createRange();range.selectNodeContents(e);const tops=[...range.getClientRects()].map(r=>r.top);return {text:e.textContent,lines:Math.max(...tops)-Math.min(...tops)<1?1:2,overflow:e.scrollWidth>e.clientWidth+1};}));
+    if(!values.length||values.some(v=>v.text!=='100%'||v.lines!==1||v.overflow))throw new Error('Percentage wrapped or overflowed '+JSON.stringify(values));
+  };
+  for(const panelScale of [.8,1,1.25]){
+    await invoke('update_preferences',{patch:{panelScale}});await show(full);
+    await pet.waitForFunction(size=>Math.abs(Number(getComputedStyle(document.querySelector('.pet-bottom-panel')).zoom)-size)<.01,panelScale);
+    await pet.locator('.pet-summary').filter({hasText:'$101.42'}).waitFor();await checkPercent();await check();
+  }
+  await invoke('update_preferences',{patch:{panelScale:1}});await show(full);
+  await pet.waitForFunction(()=>Number(getComputedStyle(document.querySelector('.pet-bottom-panel')).zoom)===1);
+  await pet.locator('.pet-bottom-panel').screenshot({path:'output/playwright/bottompanel-100-percent.png'});
   const single=JSON.parse(JSON.stringify(fixture));single.quota.windows=single.quota.windows.filter(w=>w.bucket!=='codex'||w.windowMinutes===10080);await show(single);
   await pet.waitForFunction(()=>document.querySelectorAll('.pet-summary-quota').length===1);await check();
   await pet.locator('.pet-layout').screenshot({path:'output/playwright/bottompanel-single.png'});
@@ -36,7 +49,7 @@ async(page)=>{
   const cdp=await pet.context().newCDPSession(pet);
   for(const [width,height,dpr] of [[680,500,1],[680,500,2],[680,500,3],[360,500,2]]){
     await cdp.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:dpr,mobile:false});
-    await invoke('update_preferences',{patch:{scale:1.35}});await show(fixture);await check();
+    await invoke('update_preferences',{patch:{scale:1.35}});await show(full);await pet.locator('.pet-summary').filter({hasText:'$101.42'}).waitFor();await checkPercent();await check();
   }
   await pet.locator('.pet-layout').screenshot({path:'output/playwright/bottompanel-narrow.png'});
   await pet.getByRole('button',{name:'展开常显用量详情'}).click();

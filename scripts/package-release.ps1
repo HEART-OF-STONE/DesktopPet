@@ -1,5 +1,6 @@
 param([string]$Version)
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
 $root = Split-Path $PSScriptRoot -Parent
 $package = Get-Content -LiteralPath (Join-Path $root 'package.json') -Encoding UTF8 -Raw | ConvertFrom-Json
 if (-not $Version) { $Version = $package.version }
@@ -9,6 +10,12 @@ if ((Get-Item -LiteralPath $executable).VersionInfo.ProductVersion -ne $Version)
 if ((Get-Item -LiteralPath $executable).VersionInfo.ProductName -ne 'DesktopPet') { throw 'Test application cannot be distributed as production' }
 $installerSource = Join-Path $root "src-tauri/target/release/bundle/nsis/DesktopPet_${Version}_x64-setup.exe"
 $installerItem = Get-Item -LiteralPath $installerSource
+$signatureSource = $installerSource + '.sig'
+$signatureItem = Get-Item -LiteralPath $signatureSource
+if ($signatureItem.LastWriteTimeUtc -lt $installerItem.LastWriteTimeUtc -or $signatureItem.Length -gt 4096) { throw 'Updater signature is stale or invalid. Rebuild the signed installer.' }
+$signature = (Get-Content -LiteralPath $signatureSource -Encoding UTF8 -Raw).Trim()
+if (-not $signature -or [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($signature)) -notmatch '^untrusted comment:') { throw 'Invalid updater signature format' }
+& node (Join-Path $PSScriptRoot 'tauri.mjs') verify-update $installerSource
 # Tauri restores the standalone binary after bundling; allow filesystem timestamp rounding.
 if ($installerItem.VersionInfo.ProductName -ne 'DesktopPet' -or $installerItem.VersionInfo.ProductVersion -ne $Version -or $installerItem.LastWriteTimeUtc.AddSeconds(2) -lt (Get-Item -LiteralPath $executable).LastWriteTimeUtc) { throw 'Build the matching production NSIS installer first' }
 $bundleConfig = Get-Content -LiteralPath (Join-Path $root 'src-tauri/tauri.conf.json') -Encoding UTF8 -Raw | ConvertFrom-Json
@@ -22,7 +29,8 @@ $destination = Join-Path $root "output/DesktopPet-v$Version"
 $zip = Join-Path $root "output/DesktopPet-v$Version-windows-x64.zip"
 $installer = Join-Path $root "output/DesktopPet-v$Version-windows-x64-setup.exe"
 $checksums = Join-Path $root "output/DesktopPet-v$Version-SHA256SUMS.txt"
-foreach ($path in @($zip,$installer,$checksums)) { if (Test-Path -LiteralPath $path) { throw "Release artifact already exists: $path. Review it before replacing a published artifact." } }
+$manifest = Join-Path $root "output/updater-v$Version/latest.json"
+foreach ($path in @($zip,$installer,$checksums,($installer + '.sig'),$manifest)) { if (Test-Path -LiteralPath $path) { throw "Release artifact already exists: $path. Review it before replacing a published artifact." } }
 if (Test-Path -LiteralPath $destination) {
     if (@(Get-ChildItem -LiteralPath $destination -Force).Count) { throw "Release directory is not empty: $destination. Use a new version or review its existing files first." }
 } else { New-Item -ItemType Directory -Path $destination | Out-Null }
@@ -51,6 +59,11 @@ try {
     }
 } finally { $archive.Dispose() }
 Copy-Item -LiteralPath $installerSource -Destination $installer
-$hashes=@($zip,$installer | ForEach-Object { $hash=Get-FileHash -LiteralPath $_ -Algorithm SHA256; "$($hash.Hash.ToLowerInvariant())  $(Split-Path $_ -Leaf)" })
+Copy-Item -LiteralPath $signatureSource -Destination ($installer + '.sig')
+New-Item -ItemType Directory -Path (Split-Path $manifest -Parent) -Force | Out-Null
+$releaseNotes = Get-Content -LiteralPath (Join-Path $root "dev/releases/v$Version.md") -Encoding UTF8 -Raw
+$updateManifest = @{version=$Version;notes=$releaseNotes;pub_date=[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ');platforms=@{'windows-x86_64'=@{signature=$signature;url="https://github.com/HEART-OF-STONE/DesktopPet/releases/download/v$Version/DesktopPet-v$Version-windows-x64-setup.exe"}}}
+Set-Content -LiteralPath $manifest -Value ($updateManifest | ConvertTo-Json -Depth 5) -Encoding UTF8
+$hashes=@($zip,$installer,($installer + '.sig'),$manifest | ForEach-Object { $hash=Get-FileHash -LiteralPath $_ -Algorithm SHA256; "$($hash.Hash.ToLowerInvariant())  $(Split-Path $_ -Leaf)" })
 Set-Content -LiteralPath $checksums -Value $hashes -Encoding UTF8
-[pscustomobject]@{ ZIP=$zip;Installer=$installer;Checksums=$checksums;Files=$actual;SHA256=$hashes } | ConvertTo-Json
+[pscustomobject]@{ ZIP=$zip;Installer=$installer;Signature=($installer + '.sig');Manifest=$manifest;Checksums=$checksums;Files=$actual;SHA256=$hashes } | ConvertTo-Json

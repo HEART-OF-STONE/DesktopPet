@@ -1,0 +1,59 @@
+name: Signed Windows release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: signed-release
+  cancel-in-progress: false
+jobs:
+  release:
+    # Opt in after configuring the signing secret; local signed releases work without it.
+    if: github.repository == 'HEART-OF-STONE/DesktopPet' && vars.SIGNED_RELEASES_ENABLED == 'true'
+    runs-on: windows-latest
+    environment: release
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate and test
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $version = (Get-Content -LiteralPath package.json -Encoding UTF8 -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF -ne "refs/tags/v$version") { throw 'Run this workflow on the matching version tag.' }
+          npm ci
+          npm run security:check
+          npm run security:test
+          npm test
+          npm run desktop:check
+      - name: Build signed artifacts
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { throw 'Configure the release environment signing secret first.' }
+          ./scripts/build-signed-release.ps1
+      - name: Create reviewable draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $version = (Get-Content -LiteralPath package.json -Encoding UTF8 -Raw | ConvertFrom-Json).version
+          # Explicit allowlist. Never upload the checkout, build cache, or signing environment.
+          gh release create "v$version" --verify-tag --draft --title "DesktopPet v$version" --notes-file "dev/releases/v$version.md" "output/DesktopPet-v$version-windows-x64-setup.exe" "output/DesktopPet-v$version-windows-x64-setup.exe.sig" "output/DesktopPet-v$version-windows-x64.zip" "output/DesktopPet-v$version-SHA256SUMS.txt" "output/updater-v$version/latest.json"

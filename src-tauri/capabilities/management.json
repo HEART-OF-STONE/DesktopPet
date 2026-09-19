@@ -2,5 +2,5 @@
   "identifier": "management",
   "description": "Only the management window can import or remove local character data.",
   "windows": ["main"],
-  "permissions": ["allow-update-price-rates", "allow-add-pet", "allow-remove-pet", "allow-update-integrations", "allow-refresh-integrations", "allow-set-deepseek-key", "allow-demo-agent", "allow-preview-ambient", "allow-check-connections", "allow-test-agent-connection", "allow-update-inbox", "allow-export-backup", "allow-preview-backup", "allow-restore-backup", "allow-undo-restore", "allow-backup-status", "allow-get-system-status", "allow-set-startup", "allow-set-update-source", "allow-check-update", "allow-open-release-page"]
+  "permissions": ["allow-set-automatic-updates", "allow-download-update", "allow-install-update", "allow-update-price-rates", "allow-add-pet", "allow-remove-pet", "allow-update-integrations", "allow-refresh-integrations", "allow-set-deepseek-key", "allow-demo-agent", "allow-preview-ambient", "allow-check-connections", "allow-test-agent-connection", "allow-update-inbox", "allow-export-backup", "allow-preview-backup", "allow-restore-backup", "allow-undo-restore", "allow-backup-status", "allow-get-system-status", "allow-set-startup", "allow-set-update-source", "allow-check-update", "allow-open-release-page"]
 }

@@ -14,9 +14,11 @@ if (existsSync(path.join(cargoHome, 'bin', 'cargo.exe'))) {
 }
 const args = process.argv.slice(2);
 const checking = args[0] === 'check';
-const command = checking ? 'cargo' : process.execPath;
+const verifying = args[0] === 'verify-update';
+const command = checking || verifying ? 'cargo' : process.execPath;
 const commandArgs = checking
   ? ['test', '--manifest-path', path.join(root, 'src-tauri', 'Cargo.toml')]
+  : verifying ? ['run', '--locked', '--offline', '--manifest-path', path.join(root, 'src-tauri', 'Cargo.toml'), '--example', 'verify-update', '--', ...args.slice(1)]
   : [path.join(root, 'node_modules', '@tauri-apps', 'cli', 'tauri.js'), ...args];
 const child = spawn(command, commandArgs, { cwd: root, env, stdio: 'inherit', shell: false });
 child.on('error', (error) => { console.error(error.message); process.exitCode = 1; });
