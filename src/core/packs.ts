@@ -8,7 +8,8 @@ const clips = (sprite: boolean): PetPack['actions'] => Object.fromEntries(ACTION
   fps: 12, loop: action === 'idle' || action === 'sleepy' || action === 'drag',
 }])) as PetPack['actions'];
 export const builtins: PetPack[] = [false, true].map(sprite => ({
-  schemaVersion: 1, id: `doubao-${sprite ? 'sprite' : 'static'}`, name: sprite ? '豆包 · 动画版' : '豆包',
+  // Keep historical IDs stable so existing names, skins and backups still match.
+  schemaVersion: 1, id: `doubao-${sprite ? 'sprite' : 'static'}`, name: sprite ? '啾咪 · 动画版' : '啾咪',
   description: sprite ? '会眨眼，也会偷偷打瞌睡。' : '软乎乎的一小团，捏一下就很开心。',
   author: 'DesktopPet', license: '项目原创演示素材', renderer: sprite ? 'sprite' : 'static',
   width: 256, height: 256,

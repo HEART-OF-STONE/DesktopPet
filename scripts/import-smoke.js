@@ -4,8 +4,8 @@ async (page) => {
   await page.reload();
   await page.getByRole('button', { name: '角色衣橱 2', exact: true }).click();
   const cases = [
-    { name: '豆包 · 精灵图示例', files: ['pet.json', 'idle.png', 'pet.png'].map(f => `${root}/examples/sprite-sheet/${f}`) },
-    { name: '豆包 · PNG 序列示例', files: ['pet.json', ...Array.from({ length: 12 }, (_, i) => `待机-${String(i + 1).padStart(2, '0')}.png`)].map(f => `${root}/examples/png-sequence/${f}`) },
+    { name: '啾咪 · 精灵图示例', files: ['pet.json', 'idle.png', 'pet.png'].map(f => `${root}/examples/sprite-sheet/${f}`) },
+    { name: '啾咪 · PNG 序列示例', files: ['pet.json', ...Array.from({ length: 12 }, (_, i) => `待机-${String(i + 1).padStart(2, '0')}.png`)].map(f => `${root}/examples/png-sequence/${f}`) },
   ];
   const passed = [];
   for (const example of cases) {

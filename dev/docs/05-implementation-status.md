@@ -215,7 +215,7 @@ native 测试使用 `scripts/fixtures/tauri-test-config.json` 覆盖测试应用
 - `examples/png-sequence/` 与 `examples/sprite-sheet/`：可直接导入的角色包，含原创 PNG。
 - `output/playwright/`：管理界面、衣橱、偏好设置及桌面 WebView 截图。
 
-产品暂名「桌边」，演示角色暂名「豆包」。二者均未要求用户承诺最终名称。没有接入 AI、账户、云后端或 Live2D。
+当时产品暂名「桌边」，演示角色使用临时名字，尚未接入 AI、账户、云后端或 Live2D。后续用户已确定内置角色默认名为「啾咪」；当前功能状态以 dev/TODO.md 为准。
 
 ## 2. 当前行为
 

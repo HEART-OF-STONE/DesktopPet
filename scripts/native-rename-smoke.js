@@ -6,7 +6,7 @@ async (page) => {
   if (!main || !pet) throw new Error('Both native windows must exist');
   const errors = [];
   main.on('pageerror', e => errors.push(e.message)); pet.on('pageerror', e => errors.push(e.message));
-  await main.getByRole('button', { name: '给豆包改名', exact: true }).click();
+  await main.getByRole('button', { name: '给啾咪改名', exact: true }).click();
   await main.getByText('修改默认名字', { exact: false }).click();
   await main.getByRole('textbox', { name: '默认名字', exact: true }).fill('年糕');
   await main.getByRole('button', { name: '保存名字', exact: true }).click();

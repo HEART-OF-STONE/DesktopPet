@@ -9,7 +9,7 @@ async (page) => {
   if(await main.locator('.preview-note').count())throw new Error('Native bridge was not detected');
   await main.getByRole('button',{name:'角色衣橱 2',exact:true}).click();
   await main.getByRole('button',{name:'让它来陪我'}).click();
-  await pet.getByRole('img',{name:'豆包 · 动画版，逐帧动画',exact:true}).waitFor();
+  await pet.getByRole('img',{name:'啾咪 · 动画版，逐帧动画',exact:true}).waitFor();
   await main.getByRole('button',{name:'我的伙伴',exact:true}).click();
   await main.getByRole('button',{name:'摸摸头',exact:true}).click();
   await pet.locator('.pet-bubble').waitFor();

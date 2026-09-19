@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       { "label": "main", "title": "桌边 · DesktopPet", "width": 1040, "height": 760, "minWidth": 800, "minHeight": 620, "center": true, "visible": false },
-      { "label": "pet", "url": "index.html?pet=true", "title": "豆包", "width": 1000, "height": 720, "visible": false, "transparent": true, "decorations": false, "shadow": false, "resizable": false, "skipTaskbar": true, "alwaysOnTop": true, "focus": false }
+      { "label": "pet", "url": "index.html?pet=true", "title": "啾咪", "width": 1000, "height": 720, "visible": false, "transparent": true, "decorations": false, "shadow": false, "resizable": false, "skipTaskbar": true, "alwaysOnTop": true, "focus": false }
     ],
     "security": {
       "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost http://127.0.0.1:1420 ws://127.0.0.1:1420; media-src 'self' blob:; object-src 'none'; frame-src 'none'; base-uri 'self'"

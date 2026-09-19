@@ -6,11 +6,11 @@ async (page) => {
   const open = name => page.getByRole('button', { name: `给${name}改名`, exact: true }).click();
   const field = () => page.getByRole('textbox', { name: '伙伴名字', exact: true });
   const save = () => page.getByRole('button', { name: '保存名字', exact: true }).click();
-  await open('豆包'); await save();
+  await open('啾咪'); await save();
   await page.getByRole('dialog').waitFor({ state: 'hidden' });
   const unchanged = await page.evaluate(() => JSON.parse(localStorage.getItem('desktop-pet-preview-v1')));
   if (Object.keys(unchanged.preferences.petNames).length) throw new Error('Saving an unchanged default created a nickname');
-  await open('豆包');
+  await open('啾咪');
   await field().fill('   '); await save();
   await page.getByText('名字需要 1–24 个字符', { exact: true }).waitFor();
   await field().fill('🐾'.repeat(25)); await save();
@@ -25,13 +25,13 @@ async (page) => {
   await page.getByRole('img', { name: '小团子 🐾，静态图片', exact: true }).waitFor();
   await page.getByRole('button', { name: '角色衣橱 2', exact: true }).click();
   await page.getByRole('heading', { name: '小团子 🐾', exact: true }).waitFor();
-  await open('豆包 · 动画版'); await field().fill('Luna'); await save();
+  await open('啾咪 · 动画版'); await field().fill('Luna'); await save();
   await page.getByRole('heading', { name: 'Luna', exact: true }).waitFor();
   await page.getByRole('button', { name: '让它来陪我', exact: true }).click();
   await page.getByRole('button', { name: '我的伙伴', exact: true }).click();
   await page.getByRole('img', { name: 'Luna，逐帧动画', exact: true }).waitFor();
   await open('Luna'); await page.getByRole('button', { name: '恢复默认名', exact: true }).click();
-  await page.getByRole('img', { name: '豆包 · 动画版，逐帧动画', exact: true }).waitFor();
+  await page.getByRole('img', { name: '啾咪 · 动画版，逐帧动画', exact: true }).waitFor();
   await page.getByRole('button', { name: '角色衣橱 2', exact: true }).click();
   await page.getByLabel('选择角色图片或角色包文件').setInputFiles('public/pets/cream/portrait.png');
   await open('portrait'); await field().fill('我的小猫');
@@ -56,7 +56,7 @@ async (page) => {
   await page.setViewportSize({ width: 430, height: 900 });
   if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('Long name caused horizontal overflow');
   await open('小猫'.repeat(12)); await page.getByRole('button', { name: '恢复默认名', exact: true }).click();
-  await open('豆包');
+  await open('啾咪');
   await page.getByText('修改默认名字', { exact: false }).click();
   await page.getByRole('textbox', { name: '默认名字', exact: true }).fill(' '); await save();
   await page.getByText('名字需要 1–24 个字符', { exact: true }).waitFor();

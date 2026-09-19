@@ -5,7 +5,7 @@ async (page) => {
   await page.getByRole('button',{name:'角色衣橱 2',exact:true}).click();
   await page.getByRole('button',{name:'让它来陪我'}).click();
   await page.getByRole('button',{name:'我的伙伴',exact:true}).click();
-  await page.getByRole('img',{name:'豆包 · 动画版，逐帧动画',exact:true}).waitFor();
+  await page.getByRole('img',{name:'啾咪 · 动画版，逐帧动画',exact:true}).waitFor();
   const first=await page.locator('.stage-character canvas').evaluate(c=>c.toDataURL());
   await page.waitForTimeout(280);
   const second=await page.locator('.stage-character canvas').evaluate(c=>c.toDataURL());

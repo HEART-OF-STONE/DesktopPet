@@ -90,7 +90,7 @@ fn pet_display_name(s: &Snapshot) -> String {
     if let Some(name) = s.preferences.pet_names.get(id) { return name.clone(); }
     if let Some(name) = s.preferences.pet_default_names.get(id) { return name.clone(); }
     if let Some(name) = s.custom_pets.iter().find(|p| p["id"].as_str() == Some(id.as_str())).and_then(|p| p["name"].as_str()) { return name.into(); }
-    if id == "doubao-sprite" { "豆包 · 动画版".into() } else { "豆包".into() }
+    if id == "doubao-sprite" { "啾咪 · 动画版".into() } else { "啾咪".into() }
 }
 #[tauri::command]
 fn get_snapshot(app: tauri::AppHandle) -> Result<Snapshot, String> { Ok(app.state::<Runtime>().data.lock().map_err(|_| "状态暂时不可用")?.clone()) }
@@ -373,12 +373,12 @@ mod tests {
         assert!(valid_preferences(&state.preferences));
         assert!(state.preferences.ambient_enabled);assert_eq!(state.preferences.ambient_range,"still");assert_eq!(state.preferences.ambient_frequency,"normal");
         assert_eq!(state.preferences.skin_id, "sage");
-        assert_eq!(pet_display_name(&state), "豆包");
+        assert_eq!(pet_display_name(&state), "啾咪");
         state.preferences.pet_names.insert("doubao-static".into(), "小团子 🐾".into());
         let restored: Snapshot = serde_json::from_slice(&serde_json::to_vec(&state).unwrap()).unwrap();
         assert_eq!(pet_display_name(&restored), "小团子 🐾");
         state.preferences.pet_id = "doubao-sprite".into();
-        assert_eq!(pet_display_name(&state), "豆包 · 动画版");
+        assert_eq!(pet_display_name(&state), "啾咪 · 动画版");
         state.preferences.pet_id = "doubao-static".into();
         state.preferences.pet_default_names.insert("doubao-static".into(), "年糕".into());
         assert_eq!(pet_display_name(&state), "小团子 🐾");

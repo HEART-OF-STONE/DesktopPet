@@ -12,7 +12,7 @@ const sheetDir = path.join(root, 'examples/sprite-sheet');
 await mkdir(sheetDir, { recursive: true });
 await copyFile(path.join(source, 'idle.png'), path.join(sheetDir, 'idle.png'));
 await copyFile(path.join(source, 'pet.png'), path.join(sheetDir, 'pet.png'));
-await save(sheetDir, { ...base, name: '豆包 · 精灵图示例', description: '一张图片包含多帧，按矩形依次播放。',
+await save(sheetDir, { ...base, name: '啾咪 · 精灵图示例', description: '一张图片包含多帧，按矩形依次播放。',
   skins: [{ id: 'cream', name: '奶油白', color: '#e9dcc3', assets: { idle: 'idle.png', pet: 'pet.png' } }],
   actions: Object.fromEntries(['idle', 'pet'].map(action => [action, { fps: 12, loop: action === 'idle',
     frames: Array.from({ length: 12 }, (_, i) => ({ asset: action, x: (i % 4) * 768, y: Math.floor(i / 4) * 768, width: 768, height: 768 })) }])) });
@@ -26,6 +26,6 @@ for (let i = 0; i < 12; i++) {
   await sharp(path.join(source, 'idle.png')).extract({ left: (i % 4) * 768, top: Math.floor(i / 4) * 768, width: 768, height: 768 }).png().toFile(path.join(sequenceDir, name));
   assets[asset] = name; frames.push({ asset });
 }
-await save(sequenceDir, { ...base, name: '豆包 · PNG 序列示例', description: '独立 PNG 图片按清单指定顺序播放。',
+await save(sequenceDir, { ...base, name: '啾咪 · PNG 序列示例', description: '独立 PNG 图片按清单指定顺序播放。',
   skins: [{ id: 'cream', name: '奶油白', color: '#e9dcc3', assets }], actions: { idle: { fps: 12, loop: true, frames } } });
 console.log('Generated importable sprite-sheet and PNG-sequence examples.');
