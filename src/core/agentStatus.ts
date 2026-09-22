@@ -1,4 +1,4 @@
-import { compactNumber, quotaDuration, quotaWindows, quotaName, quotaObservation, estimateLabel, type IntegrationSnapshot } from './integrations';
+import { compactNumber, quotaDuration, quotaWindows, quotaName, quotaObservation, codexCredits, estimateLabel, type IntegrationSnapshot } from './integrations';
 import type { PetMotion } from './types';
 export interface PetAgentStatus {kind:string;label:string;source:string;count:number;updatedAt:number|null}
 const labels:Record<string,string>={running:'工作中',waiting:'等待确认',completed:'刚刚完成',failed:'任务出错',interrupted:'已中断',balance:'余额提醒'};
@@ -20,6 +20,7 @@ export function selectAgentStatus(data:IntegrationSnapshot,now:number):PetAgentS
 }
 export function petMetric(data:IntegrationSnapshot,now:number):string {
   switch(data.settings.petMetric){
+    case 'credits':{const c=codexCredits(data,now);return `Codex ${c.displayLabel} ${c.displayValue}${c.stale?' · 待更新':''}`;}
     case 'estimate':return `今日预估 ${estimateLabel(data.estimate?.today)}${data.scanPending?' · 补读中':data.scanError?' · 采集异常':''}`;
     case 'tokens':return data.scanAt||data.retainedRecords?`今日 ${compactNumber(data.today.total)} tokens${data.scanPending?' · 补读中':''}`:'今日用量暂无数据';
     case 'balance':return data.balance.total===null?'DeepSeek 余额未获取':`DeepSeek ${data.balance.currency} ${data.balance.total.toFixed(2)}${data.balance.error||!data.settings.deepseekEnabled||now-(data.balance.updatedAt||0)>180000?' · 旧值':''}`;

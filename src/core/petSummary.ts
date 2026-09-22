@@ -15,3 +15,12 @@ export function summaryEstimate(t?:EstimateTotal,compactLarge=false){
   if(compactLarge&&t.usd>=1000000)return {value:`≈$${compactNumber(t.usd)}`,note:t.unpriced+t.invalid?'部分计价':''};
   return {value:t.usd>0&&t.usd<0.01?'<$0.01':`≈$${t.usd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`,note:t.unpriced+t.invalid?'部分计价':''};
 }
+
+// Main quotas stay visible even when stale; only old supplementary snapshots fold away.
+export function detailQuotas(data:IntegrationSnapshot,now:number){
+  const windows=quotaWindows(data.quota).map(w=>({...w,staleReason:quotaFreshnessReason(w,now,data.settings.codexEnabled)}));
+  return {
+    visible:windows.filter(w=>w.bucket==='codex'||!w.staleReason),
+    older:windows.filter(w=>w.bucket!=='codex'&&!!w.staleReason),
+  };
+}

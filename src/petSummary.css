@@ -55,3 +55,19 @@
 .pet-bottom-panel .pet-summary-quota.is-empty>.pet-summary-note{grid-column:1/-1;text-align:left}
 .desktop-pet .pet-agent-card{position:fixed;left:auto;right:calc(var(--pet-safe-right,0px) + 12px);bottom:calc(var(--pet-safe-bottom,0px) + 12px);transform:none;width:min(340px,calc(var(--pet-safe-width,100vw) - 24px));max-height:calc(var(--pet-safe-height,100vh) - 24px)}
 .desktop-pet .pet-detail-bottom{left:calc(var(--pet-safe-left,0px) + var(--pet-safe-width,100vw) / 2);right:auto;transform:translateX(-50%)}
+.pet-summary-credits{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-top:1px solid #e1e4d8;padding:8px 0;color:#747b70;font-size:12px;line-height:1.4}
+.pet-summary-credits>span{flex:1;min-width:0}
+.pet-summary .pet-summary-credits>strong{font-size:15px;text-align:right;min-width:0;max-width:65%;overflow-wrap:anywhere}
+.pet-bottom-panel .pet-summary-credits{grid-column:1/-1;grid-row:3;margin-top:8px;padding-bottom:0}
+.pet-credit-detail>summary,.pet-older-quotas>summary{cursor:pointer;list-style:none}
+.pet-credit-detail>summary::-webkit-details-marker,.pet-older-quotas>summary::-webkit-details-marker{display:none}
+.pet-disclosure-label{display:inline-flex;align-items:center;gap:4px}
+.pet-disclosure-label svg{flex-shrink:0;transition:transform .15s ease}
+details[open]>summary .pet-disclosure-label svg{transform:rotate(180deg)}
+.pet-credit-detail>.pet-data-row{flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.pet-credit-detail .pet-credit-values{display:inline-flex;align-items:baseline;justify-content:flex-end;flex-wrap:wrap;gap:4px;min-width:0;margin-left:auto;overflow:visible;white-space:normal;font-variant-numeric:tabular-nums}
+.pet-credit-equivalent{color:#747b70;white-space:nowrap;font-size:10px}
+.pet-credit-values>strong{display:inline-flex;gap:4px;align-items:baseline}
+.pet-credit-unit{font-weight:400}
+.pet-older-quotas>summary{border-top:1px solid #edf0e3;padding:9px 0;font-size:10px;color:#747b70}
+.pet-credit-detail>summary:focus-visible,.pet-older-quotas>summary:focus-visible{outline:2px solid #93ad7c;outline-offset:2px;border-radius:3px}

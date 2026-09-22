@@ -16,7 +16,7 @@ export function CostPanel({data,onData}:{data:IntegrationSnapshot;onData:(v:Inte
   return <section className="panel agent-panel cost-panel" aria-label="美元费用预估"><h2>美元费用预估 <small>本地折算 · 非实际扣款</small></h2>
     <div className="cost-totals"><div><span>今日预估</span><strong>{estimateLabel(e?.today)}</strong></div><div><span>近 7 天预估</span><strong>{estimateLabel(e?.week)}</strong></div></div>
     <p className="agent-note">按当前保存的单价重新计算保留记录。缓存输入单独计价，推理 token 已含在输出中；不代表 Pro 订阅账单或剩余美元额度。</p>
-    {(data.scanPending||data.scanError)&&<p className="agent-warning">{data.scanPending?'历史仍在补读，金额尚未完整。':'采集异常，金额仅来自已保留的记录。'}</p>}
+    {(data.scanPending||data.scanError)&&<p className="agent-warning">{data.scanPending?'近 7 天用量仍在补齐，金额尚未完整。':'采集异常，金额仅来自已保留的记录。'}</p>}
     {!!e&&(e.week.unpriced+e.week.invalid>0)&&<p className="agent-warning">近 7 天有 {e.week.unpriced} 条未匹配价格、{e.week.invalid} 条 token 明细不完整，未计入金额。显示“部分”的金额仅为已计价小计。</p>}
     <div className="model-list">{e?.models.map(r=><div key={JSON.stringify([r.source,r.model])}><span>{r.source} / {r.model||'未知模型'}</span><strong>{estimateLabel(r.total)}</strong></div>)}</div>
     <details className="price-editor"><summary>配置模型单价（USD / 百万 token）</summary>

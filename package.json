@@ -2,7 +2,7 @@
   "name": "desktop-pet",
   "private": true,
   "license": "MIT",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",

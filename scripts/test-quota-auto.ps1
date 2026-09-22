@@ -33,6 +33,7 @@ try {
     foreach($pass in @('initial','restart')){
         Start-TestApp
         $state=Wait-Attempt 1
+        if ($state.settings.showPetCredits -ne ($pass -eq 'restart')) {throw 'Credits default or persisted opt-in mismatch'}
         $result = & npx --yes --package '@playwright/cli' playwright-cli -s=quota-auto run-code --filename scripts/native-quota-auto-smoke.js 2>&1
         $text=$result -join "`n"
         if($LASTEXITCODE -ne 0 -or $text.Contains('### Error')){throw $text}
@@ -45,7 +46,7 @@ try {
     Save-State $state
     Set-Content -LiteralPath (Join-Path $testHome 'fail-quota') -Value 'fixture' -Encoding UTF8
     Start-TestApp; $state=Wait-Attempt 2
-    if($state.quotaPoll.failures -ne 1 -or !$state.quota.error -or $state.quota.windows[0].usedPercent -ne 30){throw 'Failed query did not preserve previous quota'}
+    if($state.quotaPoll.failures -ne 1 -or !$state.quota.error -or $state.quota.windows[0].usedPercent -ne 30 -or $state.quota.credits.codex.balance -ne 1234.5){throw 'Failed query did not preserve previous quota and credits'}
     Stop-TestApp
     Start-TestApp; Start-Sleep -Seconds 3
     if((Request-Count) -ne 2){throw 'Failure cooldown lost on restart'}

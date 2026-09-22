@@ -7,7 +7,7 @@ fn main(){
         if line.contains("account/rateLimits/read"){
             writeln!(OpenOptions::new().create(true).append(true).open(root.join("quota-requests.txt")).unwrap(),"request").unwrap();
             if root.join("fail-quota").exists(){println!("{{\"id\":2,\"error\":{{\"code\":429,\"message\":\"fixture failure\"}}}}");}
-            else{println!("{{\"id\":2,\"result\":{{\"rateLimits\":{{\"limitId\":\"codex\",\"primary\":{{\"usedPercent\":30,\"windowDurationMins\":10080}},\"secondary\":null}}}}}}");}
+            else{println!("{}",r#"{"id":2,"result":{"rateLimits":{"limitId":"codex","primary":{"usedPercent":30,"windowDurationMins":10080},"secondary":null,"credits":{"balance":"1234.5","hasCredits":true,"unlimited":false}}}}"#);}
         }
         io::stdout().flush().unwrap();
     }

@@ -49,12 +49,12 @@ pub fn consume(data:&mut Data, cursor:&mut Cursor, value:&Value, fresh_after:u64
     let task=Task { id:format!("codex:{}:{}",cursor.session_id,cursor.turn_id),source:"codex".into(),session_id:cursor.session_id.clone(),turn_id:cursor.turn_id.clone(),status:status.into(),updated_at:at,tokens:None };
     let event_id=format!("{}:{}",task.id,status);
     let unseen=!data.seen_events.contains_key(&event_id);
-    let changed=task_update(data,task.clone());
+    task_update(data,task.clone());
     data.seen_events.insert(event_id,at);
-    if unseen&&changed&&at>=fresh_after&&status!="running" { notices.push(data.tasks.iter().find(|t|t.id==task.id).unwrap().clone()); }
+    if unseen&&at>=fresh_after&&status!="running" { notices.push(data.tasks.iter().find(|t|t.id==task.id).unwrap().clone()); }
     notices
 }
-fn list_files(root:&Path, output:&mut Vec<PathBuf>, depth:usize)->Result<(),String> {
+pub(super) fn list_files(root:&Path, output:&mut Vec<PathBuf>, depth:usize)->Result<(),String> {
     if depth>6 || output.len()>10000 { return Err("会话目录过大，请选择更小的 Codex 数据目录".into()); }
     if !root.exists() { return Ok(()); }
     for entry in fs::read_dir(root).map_err(|_|"无法读取 Codex 会话目录")? {
@@ -65,7 +65,7 @@ fn list_files(root:&Path, output:&mut Vec<PathBuf>, depth:usize)->Result<(),Stri
     } Ok(())
 }
 // Only complete lines advance the persisted offset; a growing partial line is retried next scan.
-fn bounded_line(reader:&mut impl BufRead)->std::io::Result<(Vec<u8>,usize,bool)> {
+pub(super) fn bounded_line(reader:&mut impl BufRead)->std::io::Result<(Vec<u8>,usize,bool)> {
     let mut line=vec![]; let mut consumed=0; let mut oversized=false;
     loop { let bytes=reader.fill_buf()?; if bytes.is_empty() { return Ok((vec![],consumed,false)); }
         let end=bytes.iter().position(|b|*b==b'\n'); let length=end.map_or(bytes.len(),|n|n+1);
@@ -75,9 +75,35 @@ fn bounded_line(reader:&mut impl BufRead)->std::io::Result<(Vec<u8>,usize,bool)>
     }
 }
 pub fn scan(data:&mut Data, root:&Path, fresh_after:u64)->Result<Vec<Task>,String> {
+    super::recent::scan(data,root,fresh_after,super::now())
+}
+pub(super) fn scan_history(data:&mut Data, root:&Path, fresh_after:u64)->Result<Vec<Task>,String> {
     if !root.join("sessions").exists() { return Err("未找到 sessions 目录，请检查 Codex 数据目录".into()); }
     let mut files=vec![]; list_files(&root.join("sessions"),&mut files,0)?; list_files(&root.join("archived_sessions"),&mut files,0)?;
     files.sort_by(|a,b|b.file_name().cmp(&a.file_name())); let mut notices=vec![];
+    // Upgrade existing ledgers without replaying token counters or task notices.
+    // Read at most 8 MiB once, from the tails of the eight newest sessions.
+    if !data.credits_backfilled {
+        for path in files.iter().take(8) {
+            let mut file=File::open(path).map_err(|_|"无法读取积分历史")?;
+            let length=file.metadata().map_err(|_|"无法读取积分历史信息")?.len();
+            let start=length.saturating_sub(1024*1024);file.seek(SeekFrom::Start(start)).map_err(|_|"无法定位积分历史")?;
+            let mut reader=BufReader::new(file.take(length-start));
+            if start>0 {bounded_line(&mut reader).map_err(|_|"无法读取积分历史")?;}
+            loop {
+                let (line,_,complete)=bounded_line(&mut reader).map_err(|_|"无法读取积分历史")?;if !complete{break;}
+                if !serde_json::from_slice::<Envelope>(&line).is_ok_and(|e|e.kind=="event_msg"){continue;}
+                if let Ok(value)=serde_json::from_slice::<Value>(&line) {
+                    if value["payload"]["type"]!="token_count"{continue;}
+                    if let Some(at)=value["timestamp"].as_str().and_then(|s|DateTime::parse_from_rfc3339(s).ok()).filter(|d|d.timestamp_millis()>0) {
+                        let quota=parse_quota(&value["payload"]["rate_limits"],at.timestamp_millis() as u64,"local_log");
+                        super::quota::merge_credits(&mut data.quota,&quota);
+                    }
+                }
+            }
+        }
+        data.credits_backfilled=true;
+    }
     let present=files.iter().filter_map(|p|p.file_name()).map(|n|n.to_string_lossy().into_owned()).collect::<HashSet<_>>();
     let mut total_read=0;data.scan_pending=false;
     for path in &files {
@@ -116,6 +142,19 @@ pub fn scan(data:&mut Data, root:&Path, fresh_after:u64)->Result<Vec<Task>,Strin
     use super::*;use serde_json::json;
     fn sample(total:u64)->Value {json!({"type":"event_msg","timestamp":"2026-09-15T00:00:00Z","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":total-20,"cached_input_tokens":30,"output_tokens":20,"reasoning_output_tokens":10,"total_tokens":total},"last_token_usage":{"total_tokens":total}}}})}
     #[test] fn repeated_usage_is_not_counted_twice_and_subsets_are_not_added() { let mut d=Data::default();let mut c=Cursor::default();consume(&mut d,&mut c,&sample(100),u64::MAX);consume(&mut d,&mut c,&sample(100),u64::MAX);consume(&mut d,&mut c,&sample(140),u64::MAX);assert_eq!(d.usage.iter().map(|u|u.tokens.total).sum::<u64>(),140);assert_eq!(d.usage.len(),2); }
+    #[test] fn credits_upgrade_backfills_consumed_logs_once_without_recounting_usage() {
+        let root=std::env::temp_dir().join(format!("desktop-pet-credits-{}",uuid::Uuid::new_v4()));
+        let sessions=root.join("sessions");fs::create_dir_all(&sessions).unwrap();
+        let mut event=sample(140);event["payload"]["rate_limits"]=json!({"limit_id":"codex","credits":{"has_credits":true,"balance":"1234.5","unlimited":false}});
+        fs::write(sessions.join("rollout-credits.jsonl"),format!("{event}\n")).unwrap();
+        let mut data=Data::default();scan_history(&mut data,&root,u64::MAX).unwrap();
+        let cursors=data.cursors.clone();let count=data.usage.len();
+        data.quota.credits.clear();data.credits_backfilled=false;
+        assert!(scan_history(&mut data,&root,u64::MAX).unwrap().is_empty());
+        assert!(data.credits_backfilled);assert_eq!(data.quota.credits["codex"].balance,Some(1234.5));assert!(data.cursors==cursors);assert_eq!(data.usage.len(),count);
+        data.quota.credits.clear();scan_history(&mut data,&root,u64::MAX).unwrap();assert!(data.quota.credits.is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
     #[test] fn scan_accepts_event_type_after_long_payload() {
         let root=std::env::temp_dir().join(format!("desktop-pet-scan-order-{}",uuid::Uuid::new_v4()));
         let sessions=root.join("sessions");fs::create_dir_all(&sessions).unwrap();
@@ -123,7 +162,7 @@ pub fn scan(data:&mut Data, root:&Path, fresh_after:u64)->Result<Vec<Task>,Strin
         let line=serde_json::to_string(&row).unwrap();
         assert!(line.find("\"event_msg\"").unwrap()>200);
         fs::write(sessions.join("rollout-order.jsonl"),format!("{line}\n")).unwrap();
-        let mut data=Data::default();let result=scan(&mut data,&root,u64::MAX);
+        let mut data=Data::default();let result=scan_history(&mut data,&root,u64::MAX);
         fs::remove_dir_all(&root).unwrap();result.unwrap();
         assert_eq!(data.usage.iter().map(|r|r.tokens.total).sum::<u64>(),140);
     }

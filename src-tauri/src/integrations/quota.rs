@@ -7,12 +7,18 @@ pub fn parse_quota(value:&Value, at:u64, source:&str)->Quota {
         else { let single=value.get("rateLimits").unwrap_or(value);json!({single["limit_id"].as_str().or(single["limitId"].as_str()).unwrap_or("codex"):single}) };
     if let (Some(buckets),Some(single))=(root.as_object_mut(),value.get("rateLimits").filter(|v|v.is_object())) {
         let id=single["limitId"].as_str().or(single["limit_id"].as_str()).unwrap_or("codex");
-        buckets.entry(id.to_string()).or_insert_with(||single.clone());
+        let entry=buckets.entry(id.to_string()).or_insert_with(||single.clone());
+        if let (Some(target),Some(credits))=(entry.as_object_mut(),single.get("credits")) {target.entry("credits").or_insert_with(||credits.clone());}
     }
-    let mut windows=vec![];let mut bucket_updated_at=std::collections::BTreeMap::new();
+    let mut windows=vec![];let mut bucket_updated_at=std::collections::BTreeMap::new();let mut credits=std::collections::BTreeMap::new();
     if let Some(buckets)=root.as_object() { for (bucket,data) in buckets {
-        if !data.is_object() || !(data.get("primary").is_some() || data.get("secondary").is_some()) { continue; }
+        if !data.is_object() { continue; }
         let bucket:String=bucket.chars().take(100).collect();
+        if let Some(value)=data.get("credits") {
+            let balance=value["balance"].as_f64().or_else(||value["balance"].as_str().filter(|s|s.len()<=100).and_then(|s|s.trim().parse::<f64>().ok())).filter(|n|n.is_finite());
+            credits.insert(bucket.clone(),QuotaCredits{balance,has_credits:value["hasCredits"].as_bool().or(value["has_credits"].as_bool()),unlimited:value["unlimited"].as_bool(),updated_at:at,source:source.into()});
+        }
+        if !(data.get("primary").is_some() || data.get("secondary").is_some()) { continue; }
         bucket_updated_at.insert(bucket.clone(),at);
         for name in ["primary","secondary"] {
         let window=&data[name];
@@ -22,11 +28,17 @@ pub fn parse_quota(value:&Value, at:u64, source:&str)->Quota {
             resets_at:window["resetsAt"].as_u64().or(window["resets_at"].as_u64()).map(|s|s.saturating_mul(1000)),
             limit_name:data["limitName"].as_str().or(data["limit_name"].as_str()).map(|s|s.chars().take(100).collect()),updated_at:Some(at),source:source.into() }); } }
     } } }
-    Quota { windows,updated_at:Some(at),source:source.into(),error:None,bucket_updated_at }
+    Quota { windows,credits,updated_at:Some(at),source:source.into(),error:None,bucket_updated_at }
+}
+pub fn merge_credits(current:&mut Quota,incoming:&Quota) {
+    for (bucket,credits) in &incoming.credits {
+        if current.credits.get(bucket).is_none_or(|old|credits.updated_at>=old.updated_at) {current.credits.insert(bucket.clone(),credits.clone());}
+    }
 }
 // A log event describes one limit bucket, not the entire account. Replace that
 // bucket's snapshot, including null windows, without erasing other buckets.
 pub fn merge_log(current:&mut Quota,incoming:Quota) {
+    merge_credits(current,&incoming);
     for w in &mut current.windows {
         if w.updated_at.is_none() {w.updated_at=current.updated_at;}
         if w.source.is_empty() {w.source=current.source.clone();}
@@ -67,13 +79,43 @@ pub fn query(settings:&Settings)->Result<Quota,String> {
                 send(&mut stdin,json!({"method":"initialized"}))?; send(&mut stdin,json!({"id":2,"method":"account/rateLimits/read"}))?;
             }
             if value["id"]==2 { if value.get("error").is_some() { return Err("实时额度暂不可用：Codex CLI 需要已登录的订阅账户；桌面版登录态可能未共享。继续显示最近日志快照。".into()); }
-                let quota=parse_quota(&value["result"],super::now(),"app_server"); if quota.bucket_updated_at.is_empty() {return Err("该账户未返回可用额度窗口".into());}return Ok(quota);
+                let quota=parse_quota(&value["result"],super::now(),"app_server"); if quota.bucket_updated_at.is_empty()&&quota.credits.is_empty() {return Err("该账户未返回额度或积分余额数据".into());}return Ok(quota);
             }
         }
     })();
     let _=child.kill();let _=child.wait(); result
 }
 #[cfg(test)] mod tests { use super::*;
+    #[test] fn credits_parse_strings_numbers_unknown_and_unlimited_without_currency_conversion() {
+        for balance in [json!(1234.5),json!("1234.5")] {
+            let q=parse_quota(&json!({"rateLimitsByLimitId":{"codex":{"credits":{"balance":balance,"hasCredits":true,"unlimited":false}}},"rateLimitResetCredits":{"availableCount":9}}),100,"app_server");
+            let c=&q.credits["codex"];assert_eq!(c.balance,Some(1234.5));assert_eq!(c.has_credits,Some(true));assert_eq!(c.updated_at,100);assert!(q.windows.is_empty());
+        }
+        for balance in [Value::Null,json!(""),json!("bad"),json!("NaN"),json!("inf")] {
+            let q=parse_quota(&json!({"limit_id":"codex","credits":{"balance":balance,"has_credits":false}}),100,"local_log");
+            assert_eq!(q.credits["codex"].balance,None);assert_eq!(q.credits["codex"].has_credits,Some(false));
+        }
+        let q=parse_quota(&json!({"credits":{"balance":"0","unlimited":true}}),100,"local_log");
+        assert_eq!(q.credits["codex"].balance,Some(0.));assert_eq!(q.credits["codex"].unlimited,Some(true));
+    }
+    #[test] fn credits_merge_independently_and_explicit_null_clears_only_its_bucket() {
+        let snapshot=|at,value|parse_quota(&json!({"limit_id":"codex","credits":value}),at,"local_log");
+        let mut q=snapshot(100,json!({"balance":"50"}));
+        merge_log(&mut q,bucket("codex",200,10080,false));assert_eq!(q.credits["codex"].updated_at,100);
+        merge_log(&mut q,parse_quota(&json!({"limit_id":"other","credits":{"balance":"999"}}),300,"local_log"));
+        merge_log(&mut q,snapshot(90,json!({"balance":"70"})));assert_eq!(q.credits["codex"].balance,Some(50.));
+        merge_log(&mut q,snapshot(400,Value::Null));assert_eq!(q.credits["codex"].balance,None);
+        merge_log(&mut q,snapshot(300,json!({"balance":"70"})));assert_eq!(q.credits["codex"].balance,None);
+        assert_eq!(q.credits["other"].balance,Some(999.));
+        let restored:Quota=serde_json::from_str(&serde_json::to_string(&q).unwrap()).unwrap();assert_eq!(restored.credits["codex"].updated_at,400);
+        let legacy:Quota=serde_json::from_value(json!({"windows":[]})).unwrap();assert!(legacy.credits.is_empty());
+    }
+    #[test] fn legacy_credits_fill_only_an_omitted_map_field() {
+        let mut v=json!({"rateLimits":{"limitId":"codex","credits":{"balance":"12"}},"rateLimitsByLimitId":{"codex":{"primary":null}}});
+        assert_eq!(parse_quota(&v,1,"app_server").credits["codex"].balance,Some(12.));
+        v["rateLimitsByLimitId"]["codex"]["credits"]=Value::Null;
+        assert_eq!(parse_quota(&v,2,"app_server").credits["codex"].balance,None);
+    }
     fn bucket(id:&str,at:u64,primary:u64,secondary:bool)->Quota {parse_quota(&json!({"limit_id":id,"primary":{"used_percent":20,"window_minutes":primary},"secondary":if secondary {json!({"used_percent":35,"window_minutes":10080})}else{Value::Null}}),at,"local_log")}
     #[test] fn plus_windows_survive_interleaved_spark_and_older_logs() {
         let mut q=bucket("codex",100,300,true);

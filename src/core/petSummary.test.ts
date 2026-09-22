@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {emptyIntegrations} from './integrations';
-import {summaryEstimate,summaryQuotas} from './petSummary';
+import {detailQuotas,summaryEstimate,summaryQuotas} from './petSummary';
 describe('side panel data',()=>{
   it('keeps weekly quota left and 5h right, excluding Spark',()=>{
     const d=structuredClone(emptyIntegrations);d.quota.updatedAt=1000;d.quota.source='local_log';
@@ -19,5 +19,18 @@ describe('side panel data',()=>{
     expect(summaryEstimate(t).value).toBe('≈$0.00');expect(summaryEstimate({...t,usd:0.001}).value).toBe('<$0.01');
     expect(summaryEstimate({...t,usd:null}).note).toBe('未计价');expect(summaryEstimate({...t,records:0}).note).toBe('暂无记录');
     expect(summaryEstimate({...t,usd:6.2918,unpriced:1})).toEqual({value:'≈$6.29',note:'部分计价'});
+  });
+  it('folds only stale supplementary quotas and keeps main quotas visible',()=>{
+    const d=structuredClone(emptyIntegrations);d.settings.codexEnabled=true;
+    d.quota.windows=[
+      {bucket:'codex',label:'secondary',windowMinutes:10080,usedPercent:34,resetsAt:null,updatedAt:1},
+      {bucket:'spark',label:'primary',windowMinutes:300,usedPercent:12,resetsAt:2000001,updatedAt:2000000},
+      {bucket:'reserve',label:'secondary',windowMinutes:10080,usedPercent:10,resetsAt:null,updatedAt:1},
+    ];
+    expect(detailQuotas(d,2000000).visible.map(w=>w.bucket)).toEqual(['codex','spark']);
+    expect(detailQuotas(d,2000000).older.map(w=>w.bucket)).toEqual(['reserve']);
+    expect(detailQuotas(d,2000001).older.map(w=>w.bucket)).toContain('spark');
+    d.settings.codexEnabled=false;
+    expect(detailQuotas(d,2000000).visible.map(w=>w.bucket)).toEqual(['codex']);
   });
 });
