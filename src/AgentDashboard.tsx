@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Activity, RefreshCw, Link2, ShieldCheck } from 'lucide-react';
+import { currentAgentTasks } from './core/agentStatus';
 import { useSubscription } from './core/hooks';
 import { emptyIntegrations, getIntegrations, integrationCommand, numberLabel as n, compactNumber, quotaDuration, quotaWindows, quotaName, quotaObservation, codexCredits, timeLabel, type IntegrationSettings, type IntegrationSnapshot } from './core/integrations';
 import { desktop } from './platform/bridge';
@@ -19,7 +20,7 @@ export function AgentDashboard(props:AgentDemoProps){
   const credits=codexCredits(data,Date.now());
   const quotaCooling=(data.quotaRefresh?.manualAvailableAt||0)>Date.now();
   const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toLocaleDateString('sv-SE');});
-  const max=Math.max(1,...Object.values(data.days));const active=data.tasks.filter(t=>['running','waiting'].includes(t.status)&&Date.now()-t.updatedAt<30*60000).length;
+  const max=Math.max(1,...Object.values(data.days));const active=currentAgentTasks(data).filter(t=>['running','waiting'].includes(t.status)&&Date.now()-t.updatedAt<30*60000).length;
   return <div className="agent-dashboard">
     <div className="agent-toolbar"><span className="status-pill"><i/>{desktop?'本机数据 · 每 10 秒读取':'桌面版可连接'}</span><button className="secondary-button" disabled={busy||!desktop} onClick={()=>void run('refresh_integrations',{live:false},'已刷新；各数据源的结果见下方。')}><RefreshCw size={15} className={busy?'spin':''}/>{busy?'处理中…':'刷新数据'}</button></div>
     <AgentDemoPanel {...props}/>

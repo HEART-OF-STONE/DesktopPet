@@ -19,6 +19,15 @@ fn w(s:&str)->Vec<u16>{s.encode_utf16().chain(Some(0)).collect()}
 const RUN:&str="Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 fn startup_name(app:&tauri::AppHandle)->String{format!("DesktopPet.{}",app.config().identifier)}
 fn expected_startup()->Result<String,String>{let exe=std::env::current_exe().map_err(|_|"无法定位程序")?;Ok(format!("\"{}\" --autostart",exe.display()))}
+fn installation_directory(executable:&std::path::Path)->Result<String,String>{
+    let parent=executable.parent().filter(|p|p.is_absolute()).ok_or("无法定位程序安装目录")?;
+    let path=parent.to_str().ok_or("安装目录包含无法识别的字符")?;
+    // NSIS expects a normal DOS/UNC path, not Rust's verbatim Windows prefix.
+    let path=if let Some(unc)=path.strip_prefix(r"\\?\UNC\"){format!(r"\\{unc}")}else{path.strip_prefix(r"\\?\").unwrap_or(path).to_owned()};
+    if path.chars().any(|c|c.is_control()||c=='"'){return Err("安装目录包含无效字符".into());}
+    Ok(path)
+}
+fn current_installation_directory()->Result<String,String>{installation_directory(&std::env::current_exe().map_err(|_|"无法定位程序")?)}
 fn read_startup(name:&str)->Result<Option<String>,String>{
     #[cfg(windows)]unsafe{
         use windows_sys::Win32::System::Registry::*;
@@ -49,7 +58,7 @@ fn save(s:&System,value:&Updates)->Result<(),String>{let temp=s.path.with_extens
 fn status(app:&tauri::AppHandle)->Result<Value,String>{
     let startup=read_startup(&startup_name(app))?;let matches=startup.as_ref()==Some(&expected_startup()?);let s=app.state::<System>();
     let updates=s.updates.lock().unwrap().clone();let t=s.transfer.lock().unwrap();
-    Ok(json!({"version":app.package_info().version.to_string(),"identifier":app.config().identifier,"managementVisible":app.get_webview_window("main").is_some_and(|w|w.is_visible().unwrap_or(false)),"startupEnabled":startup.is_some(),"startupMatches":matches,"officialRepository":OFFICIAL_REPO,"updates":updates,"transfer":{"phase":t.phase,"downloaded":t.downloaded,"total":t.total,"message":t.message}}))
+    Ok(json!({"version":app.package_info().version.to_string(),"installationDirectory":current_installation_directory().ok(),"identifier":app.config().identifier,"managementVisible":app.get_webview_window("main").is_some_and(|w|w.is_visible().unwrap_or(false)),"startupEnabled":startup.is_some(),"startupMatches":matches,"officialRepository":OFFICIAL_REPO,"updates":updates,"transfer":{"phase":t.phase,"downloaded":t.downloaded,"total":t.total,"message":t.message}}))
 }
 fn notify(app:&tauri::AppHandle){if let Ok(value)=status(app){let _=app.emit_to("main","system-status-changed",value);}}
 fn main_only(w:&WebviewWindow)->Result<(),String>{if w.label()=="main"{Ok(())}else{Err("请在管理窗口中操作系统设置".into())}}
@@ -112,8 +121,11 @@ fn trusted_download(url:&reqwest::Url,release_version:&str)->bool{
     url.scheme()=="https"&&url.host_str()==Some("github.com")&&url.port().is_none()&&url.username().is_empty()&&url.password().is_none()&&url.query().is_none()&&url.fragment().is_none()&&url.path()==expected
 }
 fn signed_update(app:&tauri::AppHandle,release_version:&str)->Result<Update,String>{
+    let directory=current_installation_directory()?;
     let query=||->Result<Option<Update>,tauri_plugin_updater::Error>{
-        let updater=app.updater_builder().endpoints(vec![format!("https://github.com/{OFFICIAL_REPO}/releases/latest/download/latest.json").parse().unwrap()])?.timeout(Duration::from_secs(20)).build()?;
+        // NSIS /D= must be last and unquoted, including paths containing spaces.
+        // Pin the running copy's location instead of relying on a stale registry entry.
+        let updater=app.updater_builder().clear_installer_args().installer_arg(format!("/D={directory}")).endpoints(vec![format!("https://github.com/{OFFICIAL_REPO}/releases/latest/download/latest.json").parse().unwrap()])?.timeout(Duration::from_secs(20)).build()?;
         tauri::async_runtime::block_on(updater.check())
     };
     let mut update=query().map_err(|_|"此版本的签名更新信息暂不可用，可稍后重试或打开发布页。")?.ok_or("发布版本与更新清单尚未同步，请稍后重试。")?;
@@ -147,6 +159,16 @@ fn signed_update(app:&tauri::AppHandle,release_version:&str)->Result<Update,Stri
     Ok(())
 }
 #[cfg(test)]mod tests{use super::*;
+    #[cfg(windows)]
+    #[test]fn installation_directory_preserves_custom_paths(){
+        for (exe,directory) in [
+            (r"E:\我的软件\Desktop Pet\desktop-pet.exe",r"E:\我的软件\Desktop Pet"),
+            (r"\\?\E:\我的软件\Desktop Pet\desktop-pet.exe",r"E:\我的软件\Desktop Pet"),
+            (r"\\?\UNC\server\share\Desktop Pet\desktop-pet.exe",r"\\server\share\Desktop Pet"),
+            (r"E:\desktop-pet.exe",r"E:\"),
+        ]{assert_eq!(installation_directory(std::path::Path::new(exe)).unwrap(),directory);}
+        for exe in ["desktop-pet.exe",r"relative\desktop-pet.exe","E:\\bad\"path\\desktop-pet.exe","E:\\bad\npath\\desktop-pet.exe"]{assert!(installation_directory(std::path::Path::new(exe)).is_err());}
+    }
     #[test]fn schedule_and_legacy_preferences(){
         let old:Updates=serde_json::from_value(json!({"repository":"old/repo","checkedAt":1000})).unwrap();assert!(old.automatic);assert_eq!(old.repository,"old/repo");
         assert!(!check_due(Some(1000),1000+CHECK_INTERVAL-1,CHECK_INTERVAL));assert!(check_due(Some(1000),1000+CHECK_INTERVAL,CHECK_INTERVAL));assert!(check_due(None,1000,CHECK_INTERVAL));assert!(check_due(Some(2000),1000,CHECK_INTERVAL));

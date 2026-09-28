@@ -5,8 +5,19 @@ const labels:Record<string,string>={running:'工作中',waiting:'等待确认',c
 export const statusLabel=(kind:string)=>labels[kind]||'安静陪伴';
 export const agentMotion=(kind:string):PetMotion=>({running:'thinking',waiting:'attention',completed:'celebrate',failed:'error',balance:'attention',interrupted:'sleepy'} as Record<string,PetMotion>)[kind]||'idle';
 export const demoText:Record<string,string>={running:'演示：正在认真工作，稍等我一下。',waiting:'演示：需要你确认一下，回来看看吧。',completed:'演示：任务完成啦，辛苦了！',failed:'演示：任务遇到问题，请查看 Agent。',balance:'演示：余额低于阈值，记得查看看板。'};
-export function selectAgentStatus(data:IntegrationSnapshot,now:number):PetAgentStatus {
+export function currentAgentTasks(data:IntegrationSnapshot){
   const tasks=data.tasks.filter(t=>t.source==='codex'?(data.settings.codexEnabled||data.settings.bridgeEnabled):data.settings.bridgeEnabled);
+  const latest=new Map<string,number>();
+  for(const task of tasks){
+    if(task.source==='codex'&&task.sessionId)latest.set(task.sessionId,Math.max(latest.get(task.sessionId)??0,task.updatedAt));
+  }
+  // Codex advances turns within a session. Keep history intact, but do not let
+  // superseded turns drive the current indicator. Other agents may run in parallel.
+  // Equal timestamps cannot establish ordering, so preserve all tied observations.
+  return tasks.filter(t=>t.source!=='codex'||!t.sessionId||t.updatedAt===latest.get(t.sessionId));
+}
+export function selectAgentStatus(data:IntegrationSnapshot,now:number):PetAgentStatus {
+  const tasks=currentAgentTasks(data);
   const age=(at:number)=>Math.max(0,now-at);
   const active=tasks.filter(t=>['running','waiting'].includes(t.status)&&age(t.updatedAt)<30*60000);
   for(const kind of ['waiting','failed','running','completed','interrupted']){

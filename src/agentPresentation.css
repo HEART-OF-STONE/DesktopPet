@@ -7,8 +7,8 @@
 .pet-agent-status{position:relative;margin-top:6px;max-width:calc(100% - 32px);color:#6d8062;font-size:11px;z-index:5;background:#f6f8edf5;border:1px solid #d7dfcd;border-radius:13px;box-shadow:0 2px 8px #24311e0b}
 .pet-status-trigger{padding:5px 9px;gap:6px;max-width:100%;min-height:25px;border-radius:13px;font-size:11px;display:flex}
 .pet-status-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pet-status-trigger>i{width:6px;height:6px;border-radius:50%;background:#91a17f;flex-shrink:0}
-.status-running .pet-status-trigger>i{background:#6896a6}.status-waiting .pet-status-trigger>i,.status-balance .pet-status-trigger>i{background:#c4923a}.status-failed .pet-status-trigger>i{background:#bb7864}.status-stale .pet-status-trigger>i{background:#a2a29a}
+.pet-status-trigger>i{width:6px;height:6px;border-radius:50%;background:#91958b;flex-shrink:0}
+.status-running .pet-status-trigger>i{background:#4f87b3}.status-completed .pet-status-trigger>i{background:#60964f}.status-waiting .pet-status-trigger>i,.status-balance .pet-status-trigger>i{background:#c4923a}.status-failed .pet-status-trigger>i{background:#bd6258}.status-stale .pet-status-trigger>i,.status-interrupted .pet-status-trigger>i{background:#91958b}
 .pet-status-metric{max-width:330px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;padding:0 10px 5px;color:#89917f;pointer-events:none}
 .pet-agent-card{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);width:320px;max-height:300px;overflow:auto;padding:14px;border-radius:14px;background:#fffff8;border:1px solid #dbe2ce;box-shadow:0 4px 15px #26302118;color:#506247;z-index:6}
 .pet-agent-card header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px}
