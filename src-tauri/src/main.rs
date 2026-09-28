@@ -4,6 +4,7 @@ mod backup;
 mod system;
 mod placement;
 mod fullscreen;
+mod tray;
 use integrations::{get_integrations,update_integrations,refresh_integrations,set_deepseek_key,demo_agent};
 
 use serde::{Deserialize, Serialize};
@@ -73,6 +74,7 @@ fn mutate(app: &tauri::AppHandle, f: impl FnOnce(&mut Snapshot) -> Result<(), St
     drop(data);
     app.emit("state-changed", &next).map_err(|e| e.to_string())?;
     if let Some(pet) = app.get_webview_window("pet") { let _ = pet.set_title(&pet_display_name(&next)); }
+    tray::sync(app);
     Ok(next)
 }
 fn valid_preferences(p: &Preferences) -> bool {
@@ -301,20 +303,7 @@ fn main() {
             } else { let _ = place_pet(app.handle(), true); }
             // Clamp a restored position after the renderer reports visible bounds.
             fullscreen::sync_visibility(app.handle())?;
-            use tauri::{menu::{Menu, MenuItem}, tray::TrayIconBuilder};
-            let menu = Menu::with_items(app, &[
-                &MenuItem::with_id(app,"show","显示宠物",true,None::<&str>)?,
-                &MenuItem::with_id(app,"settings","打开桌边",true,None::<&str>)?,
-                &MenuItem::with_id(app,"reset","移回主屏",true,None::<&str>)?,
-                &MenuItem::with_id(app,"quiet","切换免打扰",true,None::<&str>)?,
-                &MenuItem::with_id(app,"quit","退出桌边",true,None::<&str>)?,
-            ])?;
-            TrayIconBuilder::new().icon(app.default_window_icon().unwrap().clone()).tooltip("桌边 · 你的桌面伙伴").menu(&menu)
-                .on_menu_event(|app,event| { match event.id.as_ref() {
-                    "show" => { let _ = update_preferences(app.clone(),json!({"petVisible":true})); }, "settings" => show_main(app),
-                    "reset" => { let _ = desktop_action(app.clone(),"reset-position".into()); },
-                    "quiet" => { let quiet=app.state::<Runtime>().data.lock().unwrap().preferences.quiet; let _ = update_preferences(app.clone(),json!({"quiet":!quiet})); },
-                    "quit" => app.exit(0), _ => {} } }).build(app)?;
+            tray::setup(app.handle())?;
             system::start(app.handle(),&directory);
             integrations::start(app.handle(),&directory)?;
             if !std::env::args().any(|arg|arg=="--autostart"){if let Some(main)=app.get_webview_window("main"){main.show()?;}}

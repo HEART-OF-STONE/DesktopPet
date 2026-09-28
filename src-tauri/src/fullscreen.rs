@@ -24,8 +24,11 @@ pub fn sync_visibility(app:&tauri::AppHandle)->Result<(),String>{
     let (wanted,enabled)={let data=runtime.data.lock().map_err(|_|"设置不可用")?;(data.preferences.pet_visible,data.preferences.avoid_fullscreen)};
     let (visible,avoided)=visibility(wanted,enabled,enabled&&wanted&&active(app));
     let mut state=runtime.avoided.lock().map_err(|_|"避让状态不可用")?;
+    let changed=*state!=avoided;
     // Repeat only while hidden so a renderer that subscribes after startup learns the state.
     if *state!=avoided||avoided{*state=avoided;app.emit("pet-fullscreen-avoid",avoided).map_err(|e|e.to_string())?;}
+    drop(state);
+    if changed { tray::sync(app); }
     if let Some(pet)=app.get_webview_window("pet"){
         if pet.is_visible().map_err(|e|e.to_string())?!=visible{
             if visible{pet.show()}else{pet.hide()}.map_err(|e|e.to_string())?;

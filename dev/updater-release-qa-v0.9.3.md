@@ -11,7 +11,7 @@
 - 安装包大小：8,225,255 字节。SHA-256：`f979546d07b31876830c65e1fc52119b8aeb358a421acbfae7fe57c4000e3e56`。公开下载的安装包通过应用内置公钥验证；签名私钥保持在仓库外。
 - 无认证 Releases/latest 和 latest/download/latest.json 均指向 0.9.3。
 - 用保留的真实 v0.9.2 正式程序，在独立数据和 WebView 目录启动，关闭全部 Agent 联动，成功从 GitHub 检查、下载和验签 v0.9.3，状态为 `ready`。停在“安装并重启”前，没有替换用户安装；截图在被忽略的 `output/playwright/published-update093-ready.png`。
-- GitHub 独立 [Source checks](https://github.com/HEART-OF-STONE/DesktopPet/actions/runs/36403254564) 在记录时仍运行中；本地同类检查已通过。云端签名构建保持未启用，本次使用本机签名产物。
+- GitHub 独立 [Source checks](https://github.com/HEART-OF-STONE/DesktopPet/actions/runs/36403254564) 已成功完成，主线对应检查也已通过。云端签名构建保持未启用，本次使用本机签名产物。
 
 ## 使用提示
 
