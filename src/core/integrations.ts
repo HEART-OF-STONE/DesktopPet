@@ -12,6 +12,8 @@ export interface AgentDemo {id:string;kind:string;expiresAt:number}
 export interface InboxItem {id:string;source:string;kind:string;text:string;at:number;read:boolean}
 export interface QuotaWindow {bucket:string;label:string;usedPercent:number;windowMinutes:number;resetsAt:number|null;limitName?:string|null;updatedAt?:number|null;source?:string}
 export interface QuotaCredits {balance:number|null;hasCredits:boolean|null;unlimited:boolean|null;updatedAt:number;source:string}
+export interface QuotaHistoryDay {day:string;remaining:number|null;observedAt:number|null;resetsAt:number|null;source:string|null}
+export interface QuotaHistory {days:QuotaHistoryDay[];backfill:{done:boolean;completed:number;total:number;error:string|null};estimate:{totalUsd:number|null;remainingUsd:number|null;sampleCount:number;dropPercent:number;sampleUsd:number;excluded:number;from:number|null;to:number|null;reason:string}}
 export function codexCredits(data:IntegrationSnapshot,now:number){
   const c=data.quota.credits?.codex;
   const known=!!c&&(c.unlimited===true||(typeof c.balance==='number'&&Number.isFinite(c.balance)));
@@ -44,6 +46,7 @@ export interface IntegrationSnapshot {
   quotaRefresh?:{enabled:boolean;lastAttemptAt:number|null;nextAttemptAt:number|null;manualAvailableAt:number;failures:number};
   inbox?:InboxItem[];
   estimate?:Estimate;
+  quotaHistory?:QuotaHistory;
   connection?:{testedAt:number|null;lastEventAt:number|null;lastSource:string|null}; senderScript?:string|null;
 }
 const zero={input:0,cached:0,output:0,reasoning:0,total:0};

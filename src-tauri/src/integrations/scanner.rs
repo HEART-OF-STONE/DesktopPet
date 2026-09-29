@@ -32,6 +32,7 @@ pub fn consume(data:&mut Data, cursor:&mut Cursor, value:&Value, fresh_after:u64
     if let Some(id)=p["turn_id"].as_str() { cursor.turn_id=id.chars().take(150).collect(); }
     if event=="token_count" {
         let quota=parse_quota(&p["rate_limits"],at,"local_log");
+        super::quota_history::observe(&mut data.quota_history,&quota,super::now());
         super::quota::merge_log(&mut data.quota,quota);
         let total=&p["info"]["total_token_usage"];
         if total.is_object() {

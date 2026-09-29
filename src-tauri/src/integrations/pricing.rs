@@ -22,6 +22,12 @@ pub fn valid_rates(rates:&[PriceRate])->bool{
         [&r.source,&r.model].iter().all(|s|!s.is_empty()&&s.len()<=160&&s.trim()==s.as_str()&&!s.chars().any(char::is_control))
         && keys.insert((&r.source,&r.model))&&[r.input,r.cached,r.output].iter().all(|v|v.is_finite()&&(0.0..=1_000_000.0).contains(v)))
 }
+pub fn amount(row:&UsageRecord,rates:&[PriceRate])->Option<f64>{
+    let t=&row.tokens;
+    if t.cached>t.input||t.reasoning>t.output||t.input.checked_add(t.output)!=Some(t.total){return None;}
+    let p=rates.iter().find(|p|p.source==row.source&&p.model==row.model)?;
+    Some(((t.input-t.cached) as f64*p.input+t.cached as f64*p.cached+t.output as f64*p.output)/1_000_000.)
+}
 #[derive(Default,Serialize)]
 #[serde(rename_all="camelCase")]
 struct Total {usd:Option<f64>,records:u32,unpriced:u32,invalid:u32}

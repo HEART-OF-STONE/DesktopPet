@@ -8,6 +8,7 @@ import { AgentDemoPanel, type AgentDemoProps } from './AgentDemoPanel';
 import { ConnectionAssistant } from './ConnectionAssistant';
 import { CostPanel } from './CostPanel';
 import { QuotaRefreshNote } from './QuotaRefreshNote';
+import { QuotaHistoryPanel } from './QuotaHistoryPanel';
 
 const labels:Record<string,string>={running:'运行中',completed:'已完成',failed:'失败',waiting:'待确认',interrupted:'已中断'};
 export function AgentDashboard(props:AgentDemoProps){
@@ -35,6 +36,7 @@ export function AgentDashboard(props:AgentDemoProps){
       <Metric label="DeepSeek 余额" value={b.total===null?'—':`${b.currency} ${b.total.toFixed(2)}`} note={b.configured?`更新 ${timeLabel(b.updatedAt)}`:'尚未配置 API Key'}/>
     </div>
     <CostPanel data={data} onData={setData}/>
+    <QuotaHistoryPanel data={data}/>
     <section className="panel agent-panel" aria-label="Codex 积分余额"><h2>Codex 积分余额</h2><div className="balance-detail"><div><small>可用积分（credits）</small><strong>{credits.value}</strong></div><div><small>积分折合美元</small><strong>{credits.usdValue}</strong></div></div><p className="agent-note">{credits.note}<br/>按 ${credits.rate}/credit 折算参考价值，非现金余额或实际付款金额；今日费用预估不从积分中扣减。充值或邀请等积分按返回的合计显示，不推算来源明细。</p><QuotaRefreshNote data={data}/></section>
     <div className="agent-columns">
       <section className="panel agent-panel"><h2><Activity size={18}/>近 7 天用量</h2><div className="usage-chart" aria-label="近七天 token 柱状图">{days.map(day=><div key={day} className={day===today?'today':''}><span title={`${n(data.days[day]||0)} tokens`}>{compactNumber(data.days[day]||0)}</span><i style={{height:`${Math.max(2,(data.days[day]||0)/max*90)}px`}}/><small>{day.slice(5)}</small></div>)}</div><p className="agent-note">今日输入 {n(data.today.input)} · 输出 {n(data.today.output)}<br/>其中缓存 {n(data.today.cached)} · 推理 {n(data.today.reasoning)}（已包含，不重复相加）</p><div className="model-list">{Object.entries(data.models).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([model,total])=><div key={model}><span title={model}>{model}</span><strong>{n(total)}</strong></div>)}{!Object.keys(data.models).length&&<p className="agent-empty">连接后显示模型分布。</p>}</div></section>

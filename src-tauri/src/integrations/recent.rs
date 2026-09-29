@@ -76,6 +76,7 @@ fn peek(data:&mut Data,path:&Path,length:u64,key:&str)->Result<(),String>{
         if !header(&line).is_some_and(|h|["session_meta","turn_context","event_msg"].contains(&h.kind.as_str())){continue;}
         if let Ok(v)=serde_json::from_slice::<Value>(&line){consume(&mut snapshot,&mut cursor,&v,u64::MAX);}
     }
+    for point in snapshot.quota_history.points.into_values(){super::quota_history::insert(&mut data.quota_history,point,super::now());}
     quota::merge_log(&mut data.quota,snapshot.quota);
     for task in snapshot.tasks{task_update(data,task);}
     data.tail_lengths.insert(key.into(),length);Ok(())
