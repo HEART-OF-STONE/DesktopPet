@@ -1,4 +1,4 @@
-# 桌边 v0.9.4：运行与分享
+# 桌边 v0.9.5：运行与分享
 
 正式安装包与校验清单只从
 [项目 Releases](https://github.com/HEART-OF-STONE/DesktopPet/releases) 获取。

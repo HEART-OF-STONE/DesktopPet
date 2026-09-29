@@ -92,8 +92,10 @@ fn clear_demo(app:&tauri::AppHandle){if app.state::<Service>().demo.lock().unwra
 }
 pub fn start(app:&tauri::AppHandle,directory:&std::path::Path)->Result<(),Box<dyn std::error::Error>>{let path=directory.join("integrations.json");let read=|p:&PathBuf|fs::read(p).ok().filter(|b|b.len()<64*1024*1024).and_then(|b|serde_json::from_slice::<Data>(&b).ok()).filter(|d|d.version==1&&valid(&d.settings));let mut data=read(&path).or_else(||read(&path.with_extension("backup.json"))).unwrap_or_default();
     if !pricing::valid_rates(&data.price_rates){data.price_rates.clear();}
+    let prices_migrated=pricing::migrate(&mut data);
     let credential=format!("{}.deepseek",app.config().identifier);data.balance.configured=balance::credential(&credential,None).ok().flatten().is_some();data.detected_home=home(&data.settings).to_string_lossy().into_owned();prune(&mut data);
     app.manage(Service{data:Mutex::new(data),refresh:Mutex::new(()),path,credential,boot:now(),discovery:directory.join("agent-bridge.json"),demo:Mutex::new(None),connection:Mutex::new(Connection::default()),endpoint:Mutex::new(None)});
+    if prices_migrated{let s=app.state::<Service>();let d=s.data.lock().map_err(|_|"价格状态不可用")?;persist(&s,&d)?;}
     bridge::start(app.clone())?;let handle=app.clone();std::thread::spawn(move||{
         let mut balance_due=0;
         loop{

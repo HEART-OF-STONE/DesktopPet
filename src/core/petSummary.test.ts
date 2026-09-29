@@ -17,7 +17,7 @@ describe('side panel data',()=>{
   it('distinguishes zero, tiny estimates, no records and unpriced records',()=>{
     const t={usd:0,records:1,unpriced:0,invalid:0};
     expect(summaryEstimate(t).value).toBe('≈$0.00');expect(summaryEstimate({...t,usd:0.001}).value).toBe('<$0.01');
-    expect(summaryEstimate({...t,usd:null}).note).toBe('未计价');expect(summaryEstimate({...t,records:0}).note).toBe('暂无记录');
+    expect(summaryEstimate({...t,usd:null,unpriced:1}).note).toBe('缺少单价');expect(summaryEstimate({...t,records:0}).note).toBe('暂无记录');
     expect(summaryEstimate({...t,usd:6.2918,unpriced:1})).toEqual({value:'≈$6.29',note:'部分计价'});
   });
   it('folds only stale supplementary quotas and keeps main quotas visible',()=>{

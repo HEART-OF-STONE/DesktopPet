@@ -1,4 +1,4 @@
-import {quotaDuration,quotaWindows,quotaFreshnessReason,compactNumber,type IntegrationSnapshot,type EstimateTotal} from './integrations';
+import {quotaDuration,quotaWindows,quotaFreshnessReason,compactNumber,estimateUnavailable,type IntegrationSnapshot,type EstimateTotal} from './integrations';
 
 // Only the main quota belongs in the permanent panel; Spark stays in details.
 export function summaryQuotas(data:IntegrationSnapshot,now:number){
@@ -11,7 +11,7 @@ export function summaryQuotas(data:IntegrationSnapshot,now:number){
 }
 export function summaryEstimate(t?:EstimateTotal,compactLarge=false){
   if(!t||!t.records)return {value:'—',note:'暂无记录'};
-  if(t.usd===null)return {value:'—',note:'未计价'};
+  if(t.usd===null)return {value:'—',note:estimateUnavailable(t)};
   if(compactLarge&&t.usd>=1000000)return {value:`≈$${compactNumber(t.usd)}`,note:t.unpriced+t.invalid?'部分计价':''};
   return {value:t.usd>0&&t.usd<0.01?'<$0.01':`≈$${t.usd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`,note:t.unpriced+t.invalid?'部分计价':''};
 }

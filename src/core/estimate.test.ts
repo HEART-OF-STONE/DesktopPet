@@ -3,7 +3,9 @@ import { estimateLabel,emptyIntegrations } from './integrations';
 import { petMetric } from './agentStatus';
 it('keeps no records, unpriced and free usage distinct',()=>{
   expect(estimateLabel()).toBe('暂无记录');
-  expect(estimateLabel({usd:null,records:1,unpriced:1,invalid:0})).toBe('未计价');
+  expect(estimateLabel({usd:null,records:1,unpriced:1,invalid:0})).toBe('缺少单价');
+  expect(estimateLabel({usd:null,records:1,unpriced:0,invalid:1})).toBe('明细不完整');
+  expect(estimateLabel({usd:null,records:2,unpriced:1,invalid:1})).toBe('暂无法估算');
   expect(estimateLabel({usd:0,records:1,unpriced:0,invalid:0})).toBe('$0.00');
 });
 it('does not round a small positive estimate to free',()=>{

@@ -49,7 +49,7 @@ async(page)=>{
   await pet.waitForFunction(()=>document.querySelector('.pet-summary-note[title]')?.getAttribute('title')?.includes('30 分钟'));
   await pet.locator('.pet-layout').screenshot({path:'output/playwright/sidepanel-edge-values.png'});
   const empty=JSON.parse(JSON.stringify(fixture));empty.quota.windows=empty.quota.windows.filter(w=>w.bucket!=='codex');empty.estimate.today={usd:null,records:1,unpriced:1,invalid:0};await show(empty);
-  await pet.locator('.pet-summary').filter({hasText:'未计价'}).waitFor();if((await pet.locator('.pet-summary').innerText()).includes('100%'))throw new Error('Spark substituted for missing main quota');await check();
+  await pet.locator('.pet-summary').filter({hasText:'缺少单价'}).waitFor();if((await pet.locator('.pet-summary').innerText()).includes('100%'))throw new Error('Spark substituted for missing main quota');await check();
   await show(fixture);await pet.getByRole('button',{name:'展开常显用量详情'}).click();await pet.getByRole('region',{name:'桌宠用量详情'}).waitFor();
   const detail=await pet.getByRole('region',{name:'桌宠用量详情'}).boundingBox();if(detail.x<0||detail.y<0)throw new Error('Detail outside window');
   await pet.getByRole('button',{name:'收起用量详情'}).click();
