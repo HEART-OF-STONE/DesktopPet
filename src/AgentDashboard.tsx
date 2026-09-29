@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Activity, RefreshCw, Link2, ShieldCheck } from 'lucide-react';
+import { RefreshCw, Link2, ShieldCheck } from 'lucide-react';
 import { currentAgentTasks } from './core/agentStatus';
 import { useSubscription } from './core/hooks';
-import { emptyIntegrations, getIntegrations, integrationCommand, numberLabel as n, compactNumber, quotaDuration, quotaWindows, quotaName, quotaObservation, codexCredits, timeLabel, type IntegrationSettings, type IntegrationSnapshot } from './core/integrations';
+import { emptyIntegrations, getIntegrations, integrationCommand, numberLabel as n, compactNumber, estimateLabel, codexCredits, timeLabel, type IntegrationSettings, type IntegrationSnapshot } from './core/integrations';
 import { desktop } from './platform/bridge';
 import { AgentDemoPanel, type AgentDemoProps } from './AgentDemoPanel';
 import { ConnectionAssistant } from './ConnectionAssistant';
 import { CostPanel } from './CostPanel';
 import { QuotaRefreshNote } from './QuotaRefreshNote';
 import { QuotaHistoryPanel } from './QuotaHistoryPanel';
+import { AgentOverview } from './AgentOverview';
 
 const labels:Record<string,string>={running:'运行中',completed:'已完成',failed:'失败',waiting:'待确认',interrupted:'已中断'};
 export function AgentDashboard(props:AgentDemoProps){
@@ -17,33 +18,31 @@ export function AgentDashboard(props:AgentDemoProps){
   useSubscription<IntegrationSnapshot>('integrations-changed',setData);
   const settings=draft||data.settings;const edit=(patch:Partial<IntegrationSettings>)=>setDraft({...settings,...patch});
   async function run(command:string,args:Record<string,unknown>,success:string){setBusy(true);setError('');setMessage('');try{const value=await integrationCommand(command,args);setData(value);if(command==='update_integrations')setDraft(null);if(command==='set_deepseek_key')setKey('');setMessage(success);}catch(e){setError(String(e));}finally{setBusy(false);}}
-  const b=data.balance;const q=data.quota;const today=new Date().toLocaleDateString('sv-SE');
+  const b=data.balance;
   const credits=codexCredits(data,Date.now());
-  const quotaCooling=(data.quotaRefresh?.manualAvailableAt||0)>Date.now();
-  const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toLocaleDateString('sv-SE');});
-  const max=Math.max(1,...Object.values(data.days));const active=currentAgentTasks(data).filter(t=>['running','waiting'].includes(t.status)&&Date.now()-t.updatedAt<30*60000).length;
+  const active=currentAgentTasks(data).filter(t=>['running','waiting'].includes(t.status)&&Date.now()-t.updatedAt<30*60000).length;
   return <div className="agent-dashboard">
     <div className="agent-toolbar"><span className="status-pill"><i/>{desktop?'本机数据 · 每 10 秒读取':'桌面版可连接'}</span><button className="secondary-button" disabled={busy||!desktop} onClick={()=>void run('refresh_integrations',{live:false},'已刷新；各数据源的结果见下方。')}><RefreshCw size={15} className={busy?'spin':''}/>{busy?'处理中…':'刷新数据'}</button></div>
-    <AgentDemoPanel {...props}/>
-    <ConnectionAssistant data={data} disabled={busy} pending={!!draft} run={run}/>
     {error&&<div role="alert" className="error-banner">{error}</div>}{message&&<p role="status" className="agent-success">{message}</p>}
     {data.scanPending&&<p className="agent-warning" role="status">正在补齐近 7 天用量{data.scanProgress?` · 已完成 ${data.scanProgress.completedFiles} / ${data.scanProgress.eligibleFiles} 个近期文件`:''}。余额和当前任务可先查看。</p>}
-    <div className="agent-toolbar"><span className="agent-note">{data.scanProgress?`${data.scanProgress.skippedFiles} 个较早文件未参与近期补读。`:''}{data.settings.historyEnabled?(data.scanProgress?.historyPending?'更早历史正在后台补读。':'更早历史补读已开启。'):'更早历史默认不补读。'}</span><button className="secondary-button" disabled={busy||!desktop||!!draft||!data.settings.codexEnabled} onClick={()=>void run('update_integrations',{settings:{...data.settings,historyEnabled:!data.settings.historyEnabled}},data.settings.historyEnabled?'已暂停更早历史补读，保留进度。':'已开启更早历史补读；近期用量优先，历史最多保留近 90 天、20,000 条记录。')}>{data.settings.historyEnabled?'暂停历史补读':'补读更早历史'}</button></div>
     <div className="agent-metrics">
-      <Metric label="今日 token" value={data.scanAt||data.retainedRecords?n(data.today.total):'—'} note="输入 + 输出，按本地日期"/>
-      <Metric label="近 7 天 token" value={data.scanAt||data.retainedRecords?n(data.week.total):'—'} note={`保留 ${n(data.retainedRecords)} 条增量记录`}/>
-      <Metric label="最近活跃任务" value={String(active)} note="30 分钟内最后观察到的状态"/>
-      <Metric label="DeepSeek 余额" value={b.total===null?'—':`${b.currency} ${b.total.toFixed(2)}`} note={b.configured?`更新 ${timeLabel(b.updatedAt)}`:'尚未配置 API Key'}/>
+      <Metric label="今日 Token" value={data.scanAt||data.retainedRecords?compactNumber(data.today.total):'—'} note="输入 + 输出"/>
+      <Metric label="今日美元预估" value={estimateLabel(data.estimate?.today)} note="本地估算 · 非实际扣款"/>
+      <Metric label="近 7 天 Token" value={data.scanAt||data.retainedRecords?compactNumber(data.week.total):'—'} note={`${n(data.retainedRecords)} 条保留记录`}/>
+      <Metric label="活跃任务" value={String(active)} note="最近 30 分钟"/>
     </div>
-    <CostPanel data={data} onData={setData}/>
+    <AgentOverview data={data} busy={busy} onRefresh={()=>void run('refresh_integrations',{live:true},'已检查额度；冷却期间沿用最近结果。')}/>
     <QuotaHistoryPanel data={data}/>
-    <section className="panel agent-panel" aria-label="Codex 积分余额"><h2>Codex 积分余额</h2><div className="balance-detail"><div><small>可用积分（credits）</small><strong>{credits.value}</strong></div><div><small>积分折合美元</small><strong>{credits.usdValue}</strong></div></div><p className="agent-note">{credits.note}<br/>按 ${credits.rate}/credit 折算参考价值，非现金余额或实际付款金额；今日费用预估不从积分中扣减。充值或邀请等积分按返回的合计显示，不推算来源明细。</p><QuotaRefreshNote data={data}/></section>
-    <div className="agent-columns">
-      <section className="panel agent-panel"><h2><Activity size={18}/>近 7 天用量</h2><div className="usage-chart" aria-label="近七天 token 柱状图">{days.map(day=><div key={day} className={day===today?'today':''}><span title={`${n(data.days[day]||0)} tokens`}>{compactNumber(data.days[day]||0)}</span><i style={{height:`${Math.max(2,(data.days[day]||0)/max*90)}px`}}/><small>{day.slice(5)}</small></div>)}</div><p className="agent-note">今日输入 {n(data.today.input)} · 输出 {n(data.today.output)}<br/>其中缓存 {n(data.today.cached)} · 推理 {n(data.today.reasoning)}（已包含，不重复相加）</p><div className="model-list">{Object.entries(data.models).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([model,total])=><div key={model}><span title={model}>{model}</span><strong>{n(total)}</strong></div>)}{!Object.keys(data.models).length&&<p className="agent-empty">连接后显示模型分布。</p>}</div></section>
-      <section className="panel agent-panel"><h2>Codex 订阅额度</h2><QuotaRefreshNote data={data}/><p className="agent-note">主额度优先，其他模型额度单独显示。5 小时、7 天等窗口按实际返回数据展示；未返回的窗口不推算。日志可能只更新其中一类额度，各项时间分别记录。</p>{quotaWindows(q).map(w=><div className="quota-window" key={`${w.bucket}:${w.label}`}><div><span>{quotaName(w)} · {quotaDuration(w.windowMinutes)}</span><strong>剩余 {Math.max(0,100-w.usedPercent).toFixed(0)}%</strong></div><progress max="100" value={100-w.usedPercent} aria-label={`${quotaName(w)} ${quotaDuration(w.windowMinutes)}剩余额度`}/><small>{quotaObservation(w,Date.now())}<br/>重置于 {timeLabel(w.resetsAt)}</small></div>)}{!q.windows.length&&<p className="agent-empty">暂无额度窗口。订阅额度与 API 余额分别统计，缺失时不会显示为 0。</p>}{q.error&&<p className="agent-warning">{q.error}</p>}<button className="secondary-button" disabled={busy||!desktop||!data.settings.codexEnabled||quotaCooling} onClick={()=>void run('refresh_integrations',{live:true},'已检查额度；冷却期间沿用最近结果，查询时间见上方。')}>{quotaCooling?'查询冷却中':'查询实时额度'}</button></section>
-    </div>
+    <section className="panel agent-panel credits-summary" aria-label="Codex 积分余额"><h2>Codex 积分余额</h2><strong>{credits.value}{credits.known&&credits.value!=='不限量'?' 积分':''}{credits.known?` = ${credits.usdValue}`:''}</strong><p className="agent-note">{credits.note}</p><details><summary>积分换算说明</summary><p className="agent-note">按 ${credits.rate}/credit 折算参考价值，非现金余额或实际付款金额；今日费用预估不从积分中扣减。充值或邀请等积分按返回的合计显示，不推算来源明细。</p><QuotaRefreshNote data={data}/></details></section>
+    <details className="agent-dashboard-fold"><summary>美元计价与模型明细 <small>近 7 天 {estimateLabel(data.estimate?.week)}</small></summary><CostPanel data={data} onData={setData}/></details>
+    <details className="agent-dashboard-fold"><summary>任务动态 <small>{active} 个活跃任务</small></summary>
     <section className="panel agent-panel"><h2>任务动态 <small>最后观察到的状态</small></h2><p className="agent-note">Codex 日志可能延迟写入；超过 30 分钟的运行状态显示为“待核实”。审批提醒需要接入事件钩子。</p><div className="task-list">{data.tasks.slice(0,12).map(t=><div className="agent-task" key={t.id}><span className={`task-state ${t.status}`}>{['running','waiting'].includes(t.status)&&Date.now()-t.updatedAt>=30*60000?'待核实':labels[t.status]||'未知'}</span><div><strong>{t.source}</strong><small title={`${t.sessionId} / ${t.turnId}`}>{t.sessionId.slice(0,18)} · {t.turnId.slice(0,12)}</small></div><span>{t.tokens===null?'用量未记录':`${n(t.tokens)} tokens`}</span><time>{timeLabel(t.updatedAt)}</time></div>)}{!data.tasks.length&&<p className="agent-empty">还没有观察到任务。开启 Codex 采集或连接其它 Agent 后，这里会显示任务动态。</p>}</div></section>
-    <section className="panel agent-panel"><h2>余额与今日变化</h2>{b.error&&<p className="agent-warning">{b.error}，保留上次成功结果。</p>}<div className="balance-detail"><div><small>今日观测到的余额下降</small><strong>{b.updatedAt?`${b.currency} ${b.todayDecrease.toFixed(4)}`:'—'}</strong></div><div><small>赠送余额</small><strong>{b.granted===null?'—':b.granted.toFixed(2)}</strong></div><div><small>充值余额</small><strong>{b.toppedUp===null?'—':b.toppedUp.toFixed(2)}</strong></div></div><p className="agent-note">余额每 60 秒查询一次。余额下降包含账户其它应用的消耗；充值、赠送金到期和采样间隔会影响结果，不能视为当前任务的费用。跨日首次读取只建立基线。{b.available===false?'账户当前不可用。':''}</p>{b.history.length>0&&<details><summary>最近 30 次余额记录</summary><div className="balance-history">{b.history.map((r,i)=><div key={`${r.at}:${i}`}><time>{timeLabel(r.at)}</time><span>{r.currency} {r.total.toFixed(4)}</span><span>下降 {r.decrease.toFixed(4)}</span></div>)}</div></details>}</section>
+    </details>
+    <details className="agent-dashboard-fold"><summary>DeepSeek 余额与变化 <small>{b.total===null?(b.configured?'等待更新':'未配置'):`${b.currency} ${b.total.toFixed(2)}`}{b.error?' · 查询异常':''}</small></summary><section className="panel agent-panel"><h2>余额与今日变化</h2>{b.error&&<p className="agent-warning">{b.error}，保留上次成功结果。</p>}<div className="balance-detail"><div><small>今日观测到的余额下降</small><strong>{b.updatedAt?`${b.currency} ${b.todayDecrease.toFixed(4)}`:'—'}</strong></div><div><small>赠送余额</small><strong>{b.granted===null?'—':b.granted.toFixed(2)}</strong></div><div><small>充值余额</small><strong>{b.toppedUp===null?'—':b.toppedUp.toFixed(2)}</strong></div></div><p className="agent-note">余额每 60 秒查询一次。余额下降包含账户其它应用的消耗；充值、赠送金到期和采样间隔会影响结果，不能视为当前任务的费用。跨日首次读取只建立基线。{b.available===false?'账户当前不可用。':''}</p>{b.history.length>0&&<details><summary>最近 30 次余额记录</summary><div className="balance-history">{b.history.map((r,i)=><div key={`${r.at}:${i}`}><time>{timeLabel(r.at)}</time><span>{r.currency} {r.total.toFixed(4)}</span><span>下降 {r.decrease.toFixed(4)}</span></div>)}</div></details>}</section></details>
+    <details className="agent-dashboard-fold"><summary>联动演示 <small>预览桌宠动作与提醒</small></summary><AgentDemoPanel {...props}/></details>
+    <details className="agent-dashboard-fold"><summary>联动接入助手 <small>检测日志和事件通道</small></summary><ConnectionAssistant data={data} disabled={busy} pending={!!draft} run={run}/></details>
+    {draft&&<p className="agent-warning" role="status">有未保存的连接设置，请展开“连接与提醒设置”保存或撤销。</p>}
+    <details className="agent-dashboard-fold"><summary>连接与提醒设置 {draft&&<small>有未保存修改</small>}</summary>
     <section className="panel agent-panel connection-panel"><h2><Link2 size={18}/>连接与提醒</h2><fieldset disabled={busy||!desktop}>
       <CheckSetting label="显示桌宠任务与用量" checked={settings.showPetStatus} change={v=>edit({showPetStatus:v})}/>
       <CheckSetting label="常显积分余额" checked={settings.showPetCredits??false} change={v=>edit({showPetCredits:v})}/>
@@ -65,6 +64,8 @@ export function AgentDashboard(props:AgentDemoProps){
       <label>完成气泡文案<input aria-label="完成气泡文案" maxLength={160} value={settings.completionTemplate} onChange={e=>edit({completionTemplate:e.target.value})}/></label><p className="agent-note">可用变量：{'{source}'}、{'{tokens}'}。免打扰时丢弃提醒，退出免打扰后不会重放。</p>
       <button className="primary-button" disabled={!draft} onClick={()=>void run('update_integrations',{settings},'连接设置已保存，采集将在下次轮询更新。')}>保存连接设置</button>{draft&&<button className="text-button" onClick={()=>setDraft(null)}>撤销修改</button>}
     </fieldset><div className="agent-separator"/><h3><ShieldCheck size={17}/>DeepSeek API Key</h3><p className="agent-note">{b.configured?'已保存到 Windows 凭据管理器。':'尚未配置。'}密钥不写入 JSON、导出文件或角色包。更换 / 移除密钥会清除旧账户余额记录。</p><div className="key-row"><input aria-label="DeepSeek API Key" type="password" autoComplete="off" value={key} disabled={busy||!desktop} onChange={e=>setKey(e.target.value)} placeholder="粘贴 API Key，仅用于余额查询"/><button className="secondary-button" disabled={busy||!desktop||!key||!!draft} onClick={()=>void run('set_deepseek_key',{key},'密钥已保存，并开启余额查询。')}>保存密钥</button>{b.configured&&<button className="text-button" disabled={busy||!!draft} onClick={()=>void run('set_deepseek_key',{key:null},'密钥与旧账户余额记录已移除。')}>移除密钥</button>}</div>{draft&&<p className="agent-note">请先保存或撤销连接设置，再更换密钥。</p>}</section>
+    <div className="scan-settings"><details><summary>更早历史的读取设置</summary><div className="agent-toolbar"><span className="agent-note">{data.scanProgress?`${data.scanProgress.skippedFiles} 个较早文件未参与近期补读。`:''}{data.settings.historyEnabled?(data.scanProgress?.historyPending?'更早历史正在后台补读。':'更早历史补读已开启。'):'更早历史默认不补读。'}</span><button className="secondary-button" disabled={busy||!desktop||!!draft||!data.settings.codexEnabled} onClick={()=>void run('update_integrations',{settings:{...data.settings,historyEnabled:!data.settings.historyEnabled}},data.settings.historyEnabled?'已暂停更早历史补读，保留进度。':'已开启更早历史补读；近期用量优先，历史最多保留近 90 天、20,000 条记录。')}>{data.settings.historyEnabled?'暂停历史补读':'补读更早历史'}</button></div></details></div>
+    </details>
   </div>;
 }
 function Metric({label,value,note}:{label:string;value:string;note:string}){return <div className="agent-metric"><small>{label}</small><strong>{value}</strong><span>{note}</span></div>;}
