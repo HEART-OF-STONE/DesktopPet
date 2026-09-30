@@ -1,15 +1,17 @@
 export const ACTIONS = ['idle', 'pet', 'happy', 'sleepy', 'drag', 'celebrate'] as const;
 export type Action = typeof ACTIONS[number];
 export type AmbientMotion = 'stretch' | 'look' | 'doze' | 'stroll';
-export type PetMotion = Action | 'thinking' | 'attention' | 'error' | AmbientMotion;
+export const MOTIONS = [...ACTIONS, 'stretch', 'look', 'doze', 'stroll', 'thinking', 'attention', 'error', 'blink', 'ear', 'tail'] as const;
+export type PetMotion = typeof MOTIONS[number];
 export interface Frame { asset: string; x?: number; y?: number; width?: number; height?: number }
-export interface Clip { frames: Frame[]; fps: number; loop: boolean }
+export interface Clip { frames: Frame[]; fps: number; loop: boolean; durationMs?: number }
+export interface MotionClip extends Clip { variants?: Clip[]; weight?: number; cooldownMs?: number }
 export interface Skin { id: string; name: string; color: string; assets: Record<string, string> }
 export interface PetPack {
-  schemaVersion: 1; id: string; name: string; description: string;
+  schemaVersion: 1 | 2; id: string; name: string; description: string;
   author: string; license: string; renderer: 'static' | 'sprite';
   width: number; height: number; skins: Skin[];
-  actions: Partial<Record<Action, Clip>> & { idle: Clip };
+  actions: Partial<Record<PetMotion, MotionClip>> & { idle: MotionClip };
 }
 export interface Preferences {
   petId: string; skinId: string; scale: number; sound: boolean; volume: number;

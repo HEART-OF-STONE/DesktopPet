@@ -4,7 +4,7 @@ import { PetRenderer } from './renderers/PetRenderer';
 import { builtins, importFiles } from './core/packs';
 import { useCompanion, useSnapshot, useSubscription } from './core/hooks';
 import { formatTime, remaining } from './core/animation';
-import { addPet, desktop, desktopAction, removePet, renamePet, timerAction, triggerAction, updatePreferences } from './platform/bridge';
+import { addPet, desktop, desktopAction, removePet, renamePet, timerAction, triggerAction, updatePet, updatePreferences } from './platform/bridge';
 import { petDefaultName, petDisplayName } from './core/petNames';
 import { PetNameDialog } from './PetNameDialog';
 import { AgentDashboard } from './AgentDashboard';
@@ -15,6 +15,7 @@ import { AmbientPanel } from './AmbientPanel';
 import { Inbox } from './Inbox';
 import { BackupPanel } from './BackupPanel';
 import { SystemPanel } from './SystemPanel';
+import { MotionPreviewPanel } from './MotionPreviewPanel';
 import { invoke } from '@tauri-apps/api/core';
 import { getIntegrations, integrationCommand, type IntegrationSettings } from './core/integrations';
 import type { Action, PetPack, Preferences } from './core/types';
@@ -22,7 +23,7 @@ import {buildLabel,type BuildIdentity} from './core/buildIdentity';
 
 type Page='home'|'wardrobe'|'settings'|'agents'|'inbox';
 export function App() {
-  const {snapshot,error,setError}=useSnapshot(); const companion=useCompanion(snapshot.preferences,!desktop);
+  const {snapshot,error,setError}=useSnapshot();
   const [page,setPage]=useState<Page>('home'); const [now,setNow]=useState(Date.now());
   const [hasUpdate,setHasUpdate]=useState(false);
   const [build,setBuild]=useState<BuildIdentity|null>(null);
@@ -32,14 +33,17 @@ export function App() {
   useSubscription<string>('navigate-page',value=>{if(value==='agents'||value==='inbox')setPage(value);});
   const [minutes,setMinutes]=useState(25); const [pressed,setPressed]=useState(false); const [flipped,setFlipped]=useState(false);
   const [notice,setNotice]=useState(''); const [importing,setImporting]=useState(false);
+  const [updatingPet,setUpdatingPet]=useState<PetPack|null>(null);
   const [renaming,setRenaming]=useState<PetPack|null>(null);
   const fileInput=useRef<HTMLInputElement>(null); const noticeTimer=useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(()=>{const input=fileInput.current;const cancel=()=>setUpdatingPet(null);input?.addEventListener('cancel',cancel);return()=>input?.removeEventListener('cancel',cancel);},[]);
   const previousTimer=useRef(snapshot.timer.status);
   const prefs=snapshot.preferences; const pets=[...builtins,...snapshot.customPets];
+  const pack=pets.find(p=>p.id===prefs.petId)||builtins[0]; const skin=pack.skins.find(s=>s.id===prefs.skinId)||pack.skins[0];
+  const companion=useCompanion(prefs,!desktop,pack);
   const agentBubble=useAgentBubble(prefs,companion.action!=='idle'||pressed,!desktop);
   const ambientBlocked=companion.action!=='idle'||pressed||!!companion.bubble||agentBubble.motion!=='idle'||!!agentBubble.demo||!!agentBubble.text;
-  const ambient=useAmbient(prefs,ambientBlocked,!desktop&&page==='home');
-  const pack=pets.find(p=>p.id===prefs.petId)||builtins[0]; const skin=pack.skins.find(s=>s.id===prefs.skinId)||pack.skins[0];
+  const ambient=useAmbient(prefs,ambientBlocked,!desktop&&page==='home',pack);
   const name=petDisplayName(pack,prefs);
   const left=remaining(snapshot.timer,now); const active=snapshot.timer.status==='running'; const paused=snapshot.timer.status==='paused';
   useEffect(()=>{const tick=setInterval(()=>setNow(Date.now()),500);return()=>clearInterval(tick);},[]);
@@ -52,7 +56,13 @@ export function App() {
   async function setPetLayout(petLayout:IntegrationSettings['petLayout']){setLayoutBusy(true);await perform(async()=>{const current=await getIntegrations();await integrationCommand('update_integrations',{settings:{...current.settings,petLayout}});});setLayoutBusy(false);}
   const act=(action:Action)=>perform(()=>triggerAction(action));
   function select(pet:PetPack){void perform(()=>updatePreferences({petId:pet.id,skinId:pet.skins[0].id}),`已经换成${petDisplayName(pet,prefs)}`);}
-  async function handleImport(files:File[]){setImporting(true);await perform(async()=>{const imported=await importFiles(files);await addPet(imported);setPage('wardrobe');},'新伙伴已经住进来了');setImporting(false);if(fileInput.current)fileInput.current.value='';}
+  function chooseImport(pet:PetPack|null=null){setUpdatingPet(pet);fileInput.current?.click();}
+  async function handleImport(files:File[]){
+    if(!files.length){setUpdatingPet(null);return;}
+    const target=updatingPet;setImporting(true);
+    await perform(async()=>{const imported=await importFiles(files);if(target)await updatePet(target.id,imported);else await addPet(imported);setPage('wardrobe');},target?'角色的图片和动作已更新':'新伙伴已经住进来了');
+    setImporting(false);setUpdatingPet(null);if(fileInput.current)fileInput.current.value='';
+  }
   const unread=(agentBubble.data.inbox||[]).filter(i=>!i.read).length;
   const titles={home:['我的伙伴','给忙碌的日常，留一点柔软。'],wardrobe:['角色衣橱','挑一个今天想陪在身边的伙伴。'],settings:['偏好设置','让陪伴刚刚好。'],agents:['Agent 看板','工作有进展，伙伴会告诉你。'],inbox:['提醒收件箱','错过的消息，留在这里慢慢看。']};
   return <div className="app-shell">
@@ -81,7 +91,7 @@ export function App() {
           <div className="stage-character" style={{'--ambient-travel':`${ambientTravel(prefs)}px`} as CSSProperties}>
             {(companion.bubble||agentBubble.text)&&(!prefs.quiet||companion.action==='celebrate')&&<div className="preview-bubble" role="status">{companion.bubble||agentBubble.text}</div>}
             <button className="pet-touch" aria-label="摸摸宠物" onPointerDown={()=>setPressed(true)} onPointerUp={()=>setPressed(false)} onPointerLeave={()=>setPressed(false)} onClick={()=>void act('pet')}>
-              <PetRenderer pack={pack} skin={skin} displayName={name} action={companion.action!=='idle'?companion.action:agentBubble.motion!=='idle'?agentBubble.motion:ambient.motion} sequence={companion.sequence+agentBubble.sequence+ambient.sequence} size={262} pressed={pressed} flipped={flipped}/>
+              <PetRenderer pack={pack} skin={skin} displayName={name} action={companion.action!=='idle'?companion.action:agentBubble.motion!=='idle'?agentBubble.motion:ambient.motion} sequence={companion.action!=='idle'?companion.sequence:agentBubble.motion!=='idle'?agentBubble.sequence:ambient.sequence} size={262} pressed={pressed} flipped={flipped} idleDetails={!prefs.quiet} onComplete={companion.action!=='idle'?companion.complete:ambient.complete}/>
             </button>
           </div>
           <div className="stage-footer"><div className="stage-identity"><div className="pet-name-row"><strong title={name}>{name}</strong><button className="rename-button" onClick={()=>setRenaming(pack)} aria-label={`给${name}改名`}><Pencil size={13}/>改名</button></div><span>{pack.description}</span></div><button className="round-button" onClick={()=>setFlipped(v=>!v)} aria-label="翻转预览"><RotateCcw size={16}/></button></div>
@@ -100,11 +110,13 @@ export function App() {
             <div className="desktop-visibility"><span><i className={prefs.petVisible?'online':''}/>{prefs.petVisible?'桌面上的伙伴已显示':'伙伴正在休息'}</span><button aria-label={prefs.petVisible?'隐藏桌面宠物':'显示桌面宠物'} onClick={()=>void setPrefs({petVisible:!prefs.petVisible})}>{prefs.petVisible?<Eye size={17}/>:<EyeOff size={17}/>}</button></div>
           </section>
         </div>
+        <MotionPreviewPanel pack={pack.id==='doubao-static'?builtins[1]:pack} packs={pets} preferences={prefs} onApply={select}/>
       </>}
       {page==='wardrobe'&&<>
-        <div className="wardrobe-toolbar"><span>{pets.length} 位伙伴 · 两种陪伴方式</span><button className="primary-button" disabled={importing} onClick={()=>fileInput.current?.click()}><Upload size={16}/>{importing?'正在整理…':'导入角色'}</button></div>
-        <div className="pet-grid">{pets.map(p=>{const current=p.id===pack.id;const s=p.skins[0];const displayName=petDisplayName(p,prefs);return <article className={`pet-card ${current?'selected':''}`} key={p.id}><div className="pet-card-image"><span className="pet-type">{p.renderer==='static'?'静态图片':'逐帧动画'}</span><PetRenderer pack={p} skin={s} displayName={displayName} size={190}/></div><div className="pet-card-body"><div className="pet-name-row"><h2 title={displayName}>{displayName}</h2><button className="rename-button" onClick={()=>setRenaming(p)} aria-label={`给${displayName}改名`}><Pencil size={13}/>改名</button></div><p>{p.description}</p><div className="pet-card-meta"><small>{p.skins.length} 套装扮 · {p.author}</small></div><div className="card-actions"><button className={current?'current-pet':'secondary-button'} disabled={current} onClick={()=>select(p)}>{current?<><Check size={16}/>正在陪伴</>:<>让它来陪我<ArrowUpRight size={15}/></>}</button>{p.id.startsWith('custom-')&&<button className="round-button" aria-label={`移除${displayName}`} onClick={()=>void perform(()=>removePet(p.id),'已移除导入的角色')}><Trash2 size={16}/></button>}</div></div></article>;})}</div>
-        <div className="import-guide"><Upload size={20}/><div><strong>带上你自己的伙伴</strong><p>选一张透明 PNG，或同时选择角色 JSON 清单和全部 PNG 图片。支持逐帧序列与精灵图，单次最多 12 MB。</p><small>制作方式见发布包 CHARACTER-GUIDE.md；导入时只选择角色清单与 PNG 图片。</small></div></div>
+        <div className="wardrobe-toolbar"><span>{pets.length} 位伙伴 · 两种陪伴方式</span><button className="primary-button" disabled={importing} onClick={()=>chooseImport()}><Upload size={16}/>{importing?updatingPet?'正在更新…':'正在整理…':'导入角色'}</button></div>
+        <div className="pet-grid">{pets.map(p=>{const current=p.id===pack.id;const s=p.skins[0];const displayName=petDisplayName(p,prefs);return <article className={`pet-card ${current?'selected':''}`} key={p.id}><div className="pet-card-image"><span className="pet-type">{p.renderer==='static'?'静态图片':'逐帧动画'}</span><PetRenderer pack={p} skin={s} displayName={displayName} size={190}/></div><div className="pet-card-body"><div className="pet-name-row"><h2 title={displayName}>{displayName}</h2><button className="rename-button" onClick={()=>setRenaming(p)} aria-label={`给${displayName}改名`}><Pencil size={13}/>改名</button></div><p>{p.description}</p><div className="pet-card-meta"><small>{p.skins.length} 套装扮 · {p.author}</small>{p.id.startsWith('custom-')&&<button className="text-button" disabled={importing} aria-label={`更新${displayName}的素材`} onClick={()=>chooseImport(p)}><Upload size={12}/>更新素材</button>}</div><div className="card-actions"><button className={current?'current-pet':'secondary-button'} disabled={current} onClick={()=>select(p)}>{current?<><Check size={16}/>正在陪伴</>:<>让它来陪我<ArrowUpRight size={15}/></>}</button>{p.id.startsWith('custom-')&&<button className="round-button" aria-label={`移除${displayName}`} disabled={importing} onClick={()=>void perform(()=>removePet(p.id),'已移除导入的角色')}><Trash2 size={16}/></button>}</div></div></article>;})}</div>
+        <MotionPreviewPanel pack={pack} packs={pets} preferences={prefs} onApply={select}/>
+        <div className="import-guide"><Upload size={20}/><div><strong>带上你自己的伙伴</strong><p>选一张透明 PNG，或同时选择角色 JSON 清单和全部 PNG 图片。支持逐帧序列、精灵图和动作变体，单次最多 12 MB。</p><p>已有角色的图片或动作有更新，请在它的卡片点击“更新素材”，重新选择新版文件。</p><small>制作方式见发布包 CHARACTER-GUIDE.md；导入时只选择角色清单与 PNG 图片。</small></div></div>
       </>}
       {page==='agents'&&<AgentDashboard agent={agentBubble} pack={pack} skin={skin} name={name} preferences={prefs}/>}
       {page==='inbox'&&<Inbox data={agentBubble.data} onDashboard={()=>setPage('agents')}/>}

@@ -131,9 +131,8 @@ fn timer_action(app: tauri::AppHandle, action: String, minutes: Option<f64>) -> 
 }
 #[tauri::command]
 fn add_pet(app: tauri::AppHandle, pack: Value) -> Result<Snapshot, String> {
-    if !pack["id"].as_str().is_some_and(|s| s.starts_with("custom-") && s.len() <= 100)
-        || ![Some("static"), Some("sprite")].contains(&pack["renderer"].as_str()) || pack["schemaVersion"] != 1
-        || !pack["name"].as_str().is_some_and(|s| s.chars().count() <= 40) { return Err("角色格式无效".into()); }
+    // Import and backup restoration share the same v1/v2 resource and action validation.
+    backup::validate_role(&pack)?;
     let skins = pack["skins"].as_array().ok_or("缺少皮肤")?;
     if skins.is_empty() || skins.len() > 4 { return Err("皮肤数量无效".into()); }
     for skin in skins { for asset in skin["assets"].as_object().ok_or("缺少图片")?.values() {
@@ -143,6 +142,23 @@ fn add_pet(app: tauri::AppHandle, pack: Value) -> Result<Snapshot, String> {
         if s.custom_pets.iter().any(|p| p["id"] == pack["id"]) { return Err("角色已存在".into()); }
         s.preferences.pet_id = pack["id"].as_str().unwrap().into(); s.preferences.skin_id = skins[0]["id"].as_str().ok_or("皮肤 ID 无效")?.into();
         s.custom_pets.push(pack.clone()); Ok(()) })
+}
+#[tauri::command]
+fn update_pet(app: tauri::AppHandle, id: String, pack: Value) -> Result<Snapshot, String> {
+    mutate(&app, |s| replace_imported_pet(s, &id, pack))
+}
+fn replace_imported_pet(s: &mut Snapshot, id: &str, mut pack: Value) -> Result<(), String> {
+    if !id.starts_with("custom-") { return Err("只能更新已导入角色的素材".into()); }
+    let index = s.custom_pets.iter().position(|p| p["id"].as_str() == Some(id)).ok_or("要更新的角色已不存在，请重新选择")?;
+    pack.as_object_mut().ok_or("角色清单必须是 JSON 对象")?.insert("id".into(), json!(id));
+    // Validate the whole replacement before changing any preferences or stored data.
+    backup::validate_role(&pack)?;
+    let skins = pack["skins"].as_array().unwrap();
+    if s.preferences.pet_id == id && !skins.iter().any(|skin| skin["id"].as_str() == Some(s.preferences.skin_id.as_str())) {
+        s.preferences.skin_id = skins[0]["id"].as_str().unwrap().into();
+    }
+    s.custom_pets[index] = pack;
+    Ok(())
 }
 #[tauri::command]
 fn remove_pet(app: tauri::AppHandle, id: String) -> Result<Snapshot, String> {
@@ -278,7 +294,7 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, args, _| {if !args.iter().any(|a|a=="--autostart"){show_main(app)}}))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            get_snapshot, update_preferences, timer_action, add_pet, remove_pet, trigger_action, preview_ambient,
+            get_snapshot, update_preferences, timer_action, add_pet, update_pet, remove_pet, trigger_action, preview_ambient,
             begin_drag, update_hit_regions, desktop_action, get_integrations, update_integrations, refresh_integrations,
             set_deepseek_key, demo_agent, integrations::check_connections, integrations::test_agent_connection,
             integrations::inbox::update_inbox, backup::export_backup, backup::preview_backup, backup::restore_backup,
@@ -316,6 +332,45 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn replacement_pack(name: &str) -> Value {
+        use base64::Engine;
+        let asset = format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(include_bytes!("../../public/pets/cream/portrait.png")));
+        json!({"schemaVersion":2,"id":"custom-new","name":name,"description":"updated","author":"DesktopPet","license":"MIT","renderer":"sprite","width":256,"height":256,
+            "skins":[{"id":"cream","name":"奶油白","color":"#eee2c8","assets":{"portrait":asset}},{"id":"sage","name":"鼠尾草","color":"#c1d1b6","assets":{"portrait":asset}}],
+            "actions":{"idle":{"frames":[{"asset":"portrait"}],"fps":6,"loop":true},"pet":{"frames":[{"asset":"portrait"}],"fps":12,"loop":false,"variants":[{"frames":[{"asset":"portrait"}],"fps":12,"loop":false}]},"blink":{"frames":[{"asset":"portrait"}],"fps":24,"loop":false}}})
+    }
+    #[test] fn update_role_preserves_identity_names_order_and_skin_in_full_wardrobe() {
+        let mut state = Snapshot::default();
+        state.custom_pets = (0..6).map(|i| { let mut p = replacement_pack("before"); p["id"] = json!(format!("custom-{i}")); p }).collect();
+        state.preferences.pet_id = "custom-2".into(); state.preferences.skin_id = "sage".into();
+        state.preferences.pet_names.insert("custom-2".into(), "小团子".into()); state.preferences.pet_default_names.insert("custom-2".into(), "年糕".into());
+        let prefs = serde_json::to_value(&state.preferences).unwrap();
+        let ids: Vec<_> = state.custom_pets.iter().map(|p| p["id"].clone()).collect();
+        replace_imported_pet(&mut state, "custom-2", replacement_pack("after")).unwrap();
+        assert_eq!(state.custom_pets.iter().map(|p| p["id"].clone()).collect::<Vec<_>>(), ids);
+        assert_eq!(state.custom_pets[2]["name"], "after"); assert_eq!(state.custom_pets[2]["actions"]["pet"]["variants"].as_array().unwrap().len(), 1);
+        assert_eq!(serde_json::to_value(&state.preferences).unwrap(), prefs);
+        let restored: Snapshot = serde_json::from_slice(&serde_json::to_vec(&state).unwrap()).unwrap();
+        assert_eq!(restored.custom_pets[2]["id"], "custom-2"); assert_eq!(pet_display_name(&restored), "小团子");
+    }
+    #[test] fn update_role_only_changes_selected_skin_when_it_is_removed() {
+        let mut state = Snapshot::default(); let mut old = replacement_pack("before"); old["id"] = json!("custom-a"); state.custom_pets.push(old);
+        let mut new = replacement_pack("after"); new["skins"].as_array_mut().unwrap().truncate(1);
+        let prefs = serde_json::to_value(&state.preferences).unwrap();
+        replace_imported_pet(&mut state, "custom-a", new.clone()).unwrap(); assert_eq!(serde_json::to_value(&state.preferences).unwrap(), prefs);
+        state.preferences.pet_id = "custom-a".into(); state.preferences.skin_id = "sage".into();
+        replace_imported_pet(&mut state, "custom-a", new).unwrap(); assert_eq!(state.preferences.pet_id, "custom-a"); assert_eq!(state.preferences.skin_id, "cream");
+    }
+    #[test] fn update_role_rejects_invalid_data_and_missing_or_builtin_targets_atomically() {
+        let mut state = Snapshot::default(); let mut old = replacement_pack("before"); old["id"] = json!("custom-a"); state.custom_pets.push(old);
+        let before = serde_json::to_value(&state).unwrap(); let mut invalid = replacement_pack("bad"); invalid["skins"][0]["assets"]["portrait"] = json!("https://example.com/portrait.png");
+        assert!(replace_imported_pet(&mut state, "custom-a", invalid).is_err());
+        let mut invalid = replacement_pack("bad"); invalid["actions"]["blink"]["loop"] = json!(true);
+        assert!(replace_imported_pet(&mut state, "custom-a", invalid).is_err());
+        assert!(replace_imported_pet(&mut state, "custom-missing", replacement_pack("bad")).is_err());
+        assert!(replace_imported_pet(&mut state, "doubao-static", replacement_pack("bad")).is_err());
+        assert_eq!(serde_json::to_value(&state).unwrap(), before);
+    }
     #[test] fn desktop_presentation_defaults_validation_and_roundtrip(){
         let mut value=serde_json::to_value(Snapshot::default().preferences).unwrap();
         for key in ["panelSide","panelScale","avoidFullscreen"]{value.as_object_mut().unwrap().remove(key);}

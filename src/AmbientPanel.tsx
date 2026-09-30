@@ -18,7 +18,7 @@ export function AmbientPanel({p,setPrefs,ambient,blocked,pack,skin,name}:{p:Pref
       <label>活动范围<select aria-label="自主陪伴范围" disabled={!p.ambientEnabled} value={p.ambientRange} onChange={e=>setPrefs({ambientRange:e.target.value as Preferences['ambientRange']})}><option value="still">原地陪伴（默认）</option><option value="small">小幅挪动 · 左右 8 像素</option><option value="medium">稍大范围 · 左右 18 像素</option></select></label></div>
     <p className="agent-note">挪动以当前位置为中心，限于桌宠窗口内；不会自行跨屏。拖动、互动、计时提醒和 Agent 状态优先，免打扰或隐藏时暂停。</p>
     <div className="ambient-preview-row"><div><strong>马上看看</strong><div className="ambient-buttons">{(Object.keys(ambientLabel) as AmbientMotion[]).map(kind=><button className="secondary-button" key={kind} disabled={paused||kind==='stroll'&&p.ambientRange==='still'} onClick={()=>void preview(kind)}>{ambientLabel[kind]}</button>)}<button className="text-button" onClick={()=>void preview('stop')}><Square size={12}/>停止</button></div><p className="agent-note" role="status">{paused?'当前暂停：请开启自主陪伴、显示桌宠并关闭免打扰；任务或互动结束后可预览。':ambient.motion==='idle'?'预览会同步到桌宠，几秒后恢复待机。':`正在${ambientLabel[ambient.motion]}…`}</p></div>
-      <div className="ambient-preview" style={{'--ambient-travel':`${ambientTravel(p)}px`} as CSSProperties}><PetRenderer pack={pack} skin={skin} displayName={name} action={ambient.motion} sequence={ambient.sequence} size={120}/></div></div>
+      <div className="ambient-preview" style={{'--ambient-travel':`${ambientTravel(p)}px`} as CSSProperties}><PetRenderer pack={pack} skin={skin} displayName={name} action={ambient.motion} sequence={ambient.sequence} size={120} idleDetails={!p.quiet} onComplete={ambient.complete}/></div></div>
     {error&&<p role="alert" className="agent-warning">{error}</p>}
   </section>;
 }

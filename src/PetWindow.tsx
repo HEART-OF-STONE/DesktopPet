@@ -16,12 +16,12 @@ import { choosePanelSide, type PanelSide } from './core/panelLayout';
 export function PetWindow() {
   const {snapshot}=useSnapshot();const [avoiding,setAvoiding]=useState(false);
   const preferences={...snapshot.preferences,quiet:snapshot.preferences.quiet||avoiding};
-  const companion=useCompanion(preferences); const [pressed,setPressed]=useState(false);
+  const pack=[...builtins,...snapshot.customPets].find(p=>p.id===snapshot.preferences.petId)||builtins[0];
+  const companion=useCompanion(preferences,true,pack); const [pressed,setPressed]=useState(false);
   const [dragDirection,setDragDirection]=useState(0);const [dragging,setDragging]=useState(false);
   const [workArea,setWorkArea]=useState<HitRegion>();
   const agentBubble=useAgentBubble(preferences,companion.action!=='idle'||pressed);
-  const ambient=useAmbient(snapshot.preferences,companion.action!=='idle'||pressed||!!companion.bubble||agentBubble.motion!=='idle'||!!agentBubble.demo||!!agentBubble.text,true);
-  const pack=[...builtins,...snapshot.customPets].find(p=>p.id===snapshot.preferences.petId)||builtins[0];
+  const ambient=useAmbient(preferences,companion.action!=='idle'||pressed||!!companion.bubble||agentBubble.motion!=='idle'||!!agentBubble.demo||!!agentBubble.text,true,pack);
   const skin=pack.skins.find(s=>s.id===snapshot.preferences.skinId)||pack.skins[0];
   const name=petDisplayName(pack,snapshot.preferences);
   const [viewport,setViewport]=useState({width:window.innerWidth,height:window.innerHeight});
@@ -70,7 +70,7 @@ void reportHitRegions(regions.slice(0,256),placement,reposition,anchor).then(are
     <div className="desktop-character" style={{'--ambient-travel':`${ambientTravel(snapshot.preferences)}px`,'--drag-tilt':`${dragDirection*5}deg`} as CSSProperties} onContextMenu={e=>{e.preventDefault();void desktopAction('settings');}}
       onPointerDown={e=>{if(e.button!==0)return;e.preventDefault();setPressed(true);setDragging(false);setDragDirection(0);if(desktop)void beginDrag().catch(()=>setPressed(false));else e.currentTarget.setPointerCapture(e.pointerId);}}
       onPointerUp={()=>{if(!desktop){setPressed(false);companion.play('pet');}}}>
-      <PetRenderer pack={pack} skin={skin} displayName={name} action={dragging?'drag':companion.action!=='idle'?companion.action:agentBubble.motion!=='idle'?agentBubble.motion:ambient.motion} sequence={companion.sequence+agentBubble.sequence+ambient.sequence} size={petSize} pressed={pressed&&!dragging} onRegions={report}/>
+      <PetRenderer pack={pack} skin={skin} displayName={name} action={dragging?'drag':companion.action!=='idle'?companion.action:agentBubble.motion!=='idle'?agentBubble.motion:ambient.motion} sequence={companion.action!=='idle'?companion.sequence:agentBubble.motion!=='idle'?agentBubble.sequence:ambient.sequence} size={petSize} pressed={pressed&&!dragging} continuous={dragging} idleDetails={!preferences.quiet} onRegions={report} onComplete={dragging?undefined:companion.action!=='idle'?companion.complete:ambient.complete}/>
     </div>
     <div className="pet-controls" ref={controls}>
       <button aria-label="打开桌边" onClick={()=>void desktopAction('settings')}><Settings2 size={14}/></button>

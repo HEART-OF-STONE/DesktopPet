@@ -1,7 +1,7 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
-            "get_snapshot", "update_preferences", "timer_action", "add_pet", "remove_pet",
+            "get_snapshot", "update_preferences", "timer_action", "add_pet", "update_pet", "remove_pet",
             "trigger_action", "begin_drag", "update_hit_regions", "desktop_action",
             "get_integrations", "update_integrations", "refresh_integrations", "set_deepseek_key", "demo_agent",
             "preview_ambient", "check_connections", "test_agent_connection",

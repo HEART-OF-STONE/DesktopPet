@@ -1,0 +1,2515 @@
+{
+  "schemaVersion": 2,
+  "renderer": "sprite",
+  "width": 256,
+  "height": 256,
+  "author": "HEART-OF-STONE and DesktopPet contributors",
+  "license": "MIT",
+  "licenseUrl": "https://github.com/HEART-OF-STONE/DesktopPet/blob/main/LICENSE",
+  "licenseText": "MIT License\n\nCopyright (c) 2026 HEART-OF-STONE and DesktopPet contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+  "name": "啾咪 · 丰富动作示例",
+  "description": "包含独立小动作、姿势和多种互动回应。",
+  "skins": [
+    {
+      "id": "cream",
+      "name": "奶油白",
+      "color": "#e9dcc3",
+      "assets": {
+        "atlas": "pet.png"
+      }
+    }
+  ],
+  "actions": {
+    "idle": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 2,
+      "loop": true
+    },
+    "pet": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 0,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 256,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 512,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 7.5,
+      "loop": false,
+      "variants": [
+        {
+          "frames": [
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            },
+            {
+              "asset": "atlas",
+              "x": 256,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 512,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 768,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2304,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2560,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2816,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3072,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3328,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "fps": 7.5,
+          "loop": false
+        },
+        {
+          "frames": [
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            },
+            {
+              "asset": "atlas",
+              "x": 3584,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3840,
+              "y": 512,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 256,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 512,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 768,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2304,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2560,
+              "y": 768,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "fps": 7.5,
+          "loop": false
+        }
+      ]
+    },
+    "happy": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 768,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 7.6,
+      "loop": false,
+      "variants": [
+        {
+          "frames": [
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2304,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2560,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2816,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3072,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2816,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2560,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2304,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 1024,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "fps": 7.6,
+          "loop": false
+        }
+      ]
+    },
+    "sleepy": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 1024,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        }
+      ],
+      "fps": 2,
+      "loop": true,
+      "durationMs": 7000
+    },
+    "drag": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        }
+      ],
+      "fps": 4,
+      "loop": true,
+      "durationMs": 600
+    },
+    "celebrate": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 1280,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 1536,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 1536,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 1536,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 1536,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 1536,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 1536,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 7.6,
+      "loop": false,
+      "variants": [
+        {
+          "frames": [
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2304,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2560,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2816,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3072,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3328,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3584,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3840,
+              "y": 1536,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 1792,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 256,
+              "y": 1792,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 512,
+              "y": 1792,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 768,
+              "y": 1792,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 1792,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 1792,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 1792,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "fps": 7.6,
+          "loop": false
+        }
+      ]
+    },
+    "stretch": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 1792,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 7.5,
+      "loop": false,
+      "variants": [
+        {
+          "frames": [
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 256,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 512,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 768,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 768,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 512,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 256,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "fps": 7.5,
+          "loop": false
+        }
+      ]
+    },
+    "look": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 2048,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 2048,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 2048,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 2048,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 2048,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 2048,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 2048,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 2304,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 7.5,
+      "loop": false,
+      "variants": [
+        {
+          "frames": [
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            },
+            {
+              "asset": "atlas",
+              "x": 2304,
+              "y": 2048,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2816,
+              "y": 2304,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3072,
+              "y": 2304,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3328,
+              "y": 2304,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3584,
+              "y": 2304,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 3840,
+              "y": 2304,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 256,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 512,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 768,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1024,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1280,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1536,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 1792,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2048,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2304,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2560,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 2816,
+              "y": 2560,
+              "width": 256,
+              "height": 256
+            },
+            {
+              "asset": "atlas",
+              "x": 0,
+              "y": 0,
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "fps": 7.5,
+          "loop": false
+        }
+      ]
+    },
+    "doze": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 2560,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 2560,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 2560,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 2560,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 4,
+      "loop": false,
+      "weight": 0.4,
+      "cooldownMs": 180000
+    },
+    "stroll": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 2816,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 7.6,
+      "loop": false
+    },
+    "thinking": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        }
+      ],
+      "fps": 2,
+      "loop": true
+    },
+    "attention": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 3072,
+          "width": 256,
+          "height": 256
+        }
+      ],
+      "fps": 7.6,
+      "loop": false
+    },
+    "error": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 3328,
+          "width": 256,
+          "height": 256
+        }
+      ],
+      "fps": 7.5,
+      "loop": false
+    },
+    "blink": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 24,
+      "loop": false
+    },
+    "ear": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3328,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3584,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3840,
+          "y": 3584,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "tail": {
+      "frames": [
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 256,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 512,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 768,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1024,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1280,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 1536,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "atlas",
+          "x": 1792,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2048,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2304,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2560,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 2816,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 3072,
+          "y": 3840,
+          "width": 256,
+          "height": 256
+        },
+        {
+          "asset": "atlas",
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "fps": 7.5,
+      "loop": false
+    }
+  }
+}

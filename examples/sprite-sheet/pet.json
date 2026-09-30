@@ -22,92 +22,176 @@
   ],
   "actions": {
     "idle": {
-      "fps": 12,
+      "fps": 6,
       "loop": true,
       "frames": [
         {
           "asset": "idle",
           "x": 0,
           "y": 0,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
-          "x": 768,
+          "x": 512,
           "y": 0,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1024,
+          "y": 0,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
           "x": 1536,
           "y": 0,
-          "width": 768,
-          "height": 768
-        },
-        {
-          "asset": "idle",
-          "x": 2304,
-          "y": 0,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
           "x": 0,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "y": 512,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
-          "x": 768,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "x": 512,
+          "y": 512,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1024,
+          "y": 512,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
           "x": 1536,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "y": 512,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
-          "x": 2304,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "x": 0,
+          "y": 1024,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 512,
+          "y": 1024,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1024,
+          "y": 1024,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1536,
+          "y": 1024,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
           "x": 0,
           "y": 1536,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
-          "x": 768,
+          "x": 512,
           "y": 1536,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1024,
+          "y": 1536,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
           "x": 1536,
           "y": 1536,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "idle",
-          "x": 2304,
-          "y": 1536,
-          "width": 768,
-          "height": 768
+          "x": 0,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 512,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1024,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1536,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 0,
+          "y": 2560,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 512,
+          "y": 2560,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1024,
+          "y": 2560,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "idle",
+          "x": 1536,
+          "y": 2560,
+          "width": 512,
+          "height": 512
         }
       ]
     },
@@ -119,85 +203,169 @@
           "asset": "pet",
           "x": 0,
           "y": 0,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
-          "x": 768,
+          "x": 512,
           "y": 0,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1024,
+          "y": 0,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
           "x": 1536,
           "y": 0,
-          "width": 768,
-          "height": 768
-        },
-        {
-          "asset": "pet",
-          "x": 2304,
-          "y": 0,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
           "x": 0,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "y": 512,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
-          "x": 768,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "x": 512,
+          "y": 512,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1024,
+          "y": 512,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
           "x": 1536,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "y": 512,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
-          "x": 2304,
-          "y": 768,
-          "width": 768,
-          "height": 768
+          "x": 0,
+          "y": 1024,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 512,
+          "y": 1024,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1024,
+          "y": 1024,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1536,
+          "y": 1024,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
           "x": 0,
           "y": 1536,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
-          "x": 768,
+          "x": 512,
           "y": 1536,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1024,
+          "y": 1536,
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
           "x": 1536,
           "y": 1536,
-          "width": 768,
-          "height": 768
+          "width": 512,
+          "height": 512
         },
         {
           "asset": "pet",
-          "x": 2304,
-          "y": 1536,
-          "width": 768,
-          "height": 768
+          "x": 0,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 512,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1024,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1536,
+          "y": 2048,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 0,
+          "y": 2560,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 512,
+          "y": 2560,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1024,
+          "y": 2560,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "asset": "pet",
+          "x": 1536,
+          "y": 2560,
+          "width": 512,
+          "height": 512
         }
       ]
     }

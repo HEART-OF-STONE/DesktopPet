@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { defaultSnapshot, type Action, type Snapshot, type Preferences } from './types';
+import { defaultSnapshot, type Action, type Snapshot, type Preferences, type PetPack, type PetMotion } from './types';
+import { motionDuration } from './motions';
 import { softChime } from './audio';
 import { getSnapshot, subscribe } from '../platform/bridge';
 
@@ -26,25 +27,34 @@ const lines: Record<Action, string[]> = {
   drag: ['出发！去桌面的另一边。', '这里就是我的新位置吗？'],
   celebrate: ['完成啦！起来伸个懒腰吧。', '专注的你，很棒哦。'],
 };
-export function useCompanion(preferences?: Preferences, soundEnabled=true) {
+export function useCompanion(preferences?: Preferences, soundEnabled=true, pack?: PetPack) {
   const [action, setAction] = useState<Action>('idle');
   const [bubble, setBubble] = useState('');
   const [sequence, setSequence] = useState(0);
   const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const actionTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const previous = useRef('');
+  const playing = useRef({ action: 'idle' as Action, sequence: 0 });
+  function complete(done: PetMotion, token: number) {
+    if (playing.current.action !== done || playing.current.sequence !== token) return;
+    clearTimeout(actionTimeout.current); playing.current.action = 'idle'; setAction('idle');
+  }
   function play(next: Action) {
     if (soundEnabled && preferences?.sound && !preferences.quiet && next!=='idle') softChime(preferences.volume);
     clearTimeout(timeout.current);
     clearTimeout(actionTimeout.current);
-    setAction(next); setSequence(s => s + 1);
+    const token = playing.current.sequence + 1;
+    playing.current = { action: next, sequence: token }; setAction(next); setSequence(token);
     const choices = lines[next].filter(line => line !== previous.current);
     const line = choices[Math.floor(Math.random() * choices.length)] || lines[next][0];
     previous.current = line; setBubble(line);
-    if(next==='drag')actionTimeout.current=setTimeout(()=>setAction('idle'),220);
-    timeout.current = setTimeout(() => { setAction('idle'); setBubble(''); }, next === 'sleepy' ? 7000 : 4200);
+    // Renderer completion controls the pose; a watchdog also handles missing/unmounted renderers.
+    const duration = pack ? motionDuration(pack, next, token) : next === 'sleepy' ? 7000 : next === 'drag' ? 600 : 4200;
+    if (Number.isFinite(duration)) actionTimeout.current = setTimeout(() => complete(next, token), duration + 1500);
+    timeout.current = setTimeout(() => setBubble(''), next === 'sleepy' ? 7000 : 4200);
   }
   useSubscription<Action>('pet-action', play);
   useEffect(() => () => {clearTimeout(timeout.current);clearTimeout(actionTimeout.current);}, []);
-  return { action, bubble, sequence, play, dismiss: () => setBubble('') };
+  useEffect(() => { clearTimeout(actionTimeout.current); clearTimeout(timeout.current); playing.current.action = 'idle'; setAction('idle'); setBubble(''); }, [pack?.id, preferences?.quiet, preferences?.petVisible]);
+  return { action, bubble, sequence, play, complete, dismiss: () => setBubble('') };
 }

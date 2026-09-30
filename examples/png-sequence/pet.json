@@ -32,7 +32,7 @@
   ],
   "actions": {
     "idle": {
-      "fps": 12,
+      "fps": 3,
       "loop": true,
       "frames": [
         {

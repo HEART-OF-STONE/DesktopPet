@@ -11,7 +11,8 @@ fn text(v:&Value,max:usize)->bool{v.as_str().is_some_and(|s|s.chars().count()<=m
 fn id(v:&Value,max:usize)->bool{v.as_str().is_some_and(|s|!s.is_empty()&&s.len()<=max&&s.chars().all(|c|c.is_ascii_alphanumeric()||c=='-'||c=='_'))}
 pub fn validate_role(p:&Value)->Result<(),String>{
     keys(p,&["schemaVersion","id","name","description","author","license","renderer","width","height","skins","actions"])?;
-    require(p["schemaVersion"]==1&&id(&p["id"],100)&&p["id"].as_str().unwrap().starts_with("custom-"),"角色版本或 ID 无效")?;
+    let version=p["schemaVersion"].as_u64().unwrap_or(0);
+    require([1,2].contains(&version)&&id(&p["id"],100)&&p["id"].as_str().unwrap().starts_with("custom-"),"角色版本或 ID 无效")?;
     require(text(&p["name"],40)&&!p["name"].as_str().unwrap_or("").trim().is_empty()&&text(&p["description"],120)&&text(&p["author"],60)&&text(&p["license"],120),"角色说明无效")?;
     require([Some("static"),Some("sprite")].contains(&p["renderer"].as_str())&&["width","height"].iter().all(|k|p[k].as_f64().is_some_and(|n|(16.0..=2048.0).contains(&n))),"角色画布无效")?;
     let skins=p["skins"].as_array().ok_or("缺少皮肤")?;require(!skins.is_empty()&&skins.len()<=4,"皮肤数量无效")?;
@@ -35,8 +36,23 @@ pub fn validate_role(p:&Value)->Result<(),String>{
             require(decoded.width()==w&&decoded.height()==h,"图片尺寸不一致")?;let size=(w as f64,h as f64);decoded_assets.insert(raw,size);sizes.insert(name.as_str(),size);
         }dimensions.push(sizes);
     }
-    let actions=p["actions"].as_object().ok_or("缺少动作")?;require(actions.contains_key("idle")&&actions.keys().all(|a|["idle","pet","happy","sleepy","drag","celebrate"].contains(&a.as_str())),"动作名称无效或缺少待机")?;
-    for clip in actions.values(){keys(clip,&["frames","fps","loop"])?;require(clip["fps"].as_f64().is_some_and(|n|(1.0..=60.0).contains(&n))&&clip["loop"].is_boolean(),"帧率或循环设置无效")?;
+    let actions=p["actions"].as_object().ok_or("缺少动作")?;
+    let legacy=["idle","pet","happy","sleepy","drag","celebrate"];
+    let extended=["idle","pet","happy","sleepy","drag","celebrate","stretch","look","doze","stroll","thinking","attention","error","blink","ear","tail"];
+    require(actions.contains_key("idle")&&actions.keys().all(|a|if version==1{legacy.contains(&a.as_str())}else{extended.contains(&a.as_str())}),"动作名称无效或缺少待机")?;
+    for (action,definition) in actions {
+        if version==1{keys(definition,&["frames","fps","loop"])?;}else{keys(definition,&["frames","fps","loop","durationMs","variants","weight","cooldownMs"])?;}
+        let mut clips=vec![definition];
+        if let Some(value)=definition.get("variants") {
+            let variants=value.as_array().ok_or("动作变体格式无效")?;require(version==2&&!variants.is_empty()&&variants.len()<=4,"动作最多提供 4 个额外变体")?;
+            for variant in variants {keys(variant,&["frames","fps","loop","durationMs"])?;clips.push(variant);}
+        }
+        for (key,low,high) in [("weight",0.1,10.0),("cooldownMs",1000.0,600000.0)] {
+            if let Some(value)=definition.get(key){require(version==2&&["stretch","look","doze","stroll"].contains(&action.as_str())&&value.as_f64().is_some_and(|n|n.is_finite()&&(low..=high).contains(&n)),"自主行为权重或冷却无效")?;}
+        }
+        for clip in clips {require(clip["fps"].as_f64().is_some_and(|n|(1.0..=60.0).contains(&n))&&clip["loop"].is_boolean(),"帧率或循环设置无效")?;
+        if ["blink","ear","tail"].contains(&action.as_str()){require(clip["loop"]==false,"待机小动作必须播放一次")?;}
+        if let Some(value)=clip.get("durationMs"){require(version==2&&clip["loop"]==true&&value.as_f64().is_some_and(|n|(100.0..=30000.0).contains(&n)),"循环时长无效")?;}
         let frames=clip["frames"].as_array().ok_or("缺少动画帧")?;require(!frames.is_empty()&&frames.len()<=120,"动画帧数量无效")?;
         for frame in frames {keys(frame,&["asset","x","y","width","height"])?;let asset=frame["asset"].as_str().ok_or("动画帧引用无效")?;
             require(dimensions.iter().all(|d|d.contains_key(asset)),"动作引用了不存在的图片")?;
@@ -44,6 +60,7 @@ pub fn validate_role(p:&Value)->Result<(),String>{
                 let get=|k:&str|frame[k].as_f64().filter(|v|v.is_finite()).ok_or("裁剪坐标无效");let(x,y,w,h)=(get("x")?,get("y")?,get("width")?,get("height")?);
                 require(x>=0.&&y>=0.&&(1.0..=2048.).contains(&w)&&(1.0..=2048.).contains(&h)&&dimensions.iter().all(|d|x+w<=d[asset].0&&y+h<=d[asset].1),"裁剪区域超出图片")?;
             }
+        }
         }
     }Ok(())
 }
@@ -83,6 +100,29 @@ fn apply(app:&tauri::AppHandle,b:Backup,save_point:bool)->Result<Snapshot,String
 }
 #[tauri::command]pub fn backup_status(window:WebviewWindow,app:tauri::AppHandle)->Result<bool,String>{main_only(&window)?;Ok(point_path(&app).is_file())}
 #[cfg(test)]mod tests{use super::*;
+    fn motion_pack()->Value{
+        let mut pack:Value=serde_json::from_str(include_str!("../../examples/motion-pack-v2/pet.json")).unwrap();
+        let object=pack.as_object_mut().unwrap();object.remove("licenseUrl");object.remove("licenseText");object.insert("id".into(),json!("custom-motion-test"));
+        pack["skins"][0]["assets"]["atlas"]=json!(format!("data:image/png;base64,{}",STANDARD.encode(include_bytes!("../../examples/motion-pack-v2/pet.png"))));pack
+    }
+    #[test]fn v2_motion_pack_roundtrips_with_all_variants(){
+        let pack=motion_pack();assert!(validate_role(&pack).is_ok());
+        let mut snapshot=Snapshot::default();snapshot.preferences.pet_id="custom-motion-test".into();snapshot.custom_pets.push(pack);
+        let text=serde_json::to_string(&from_state(snapshot)).unwrap();assert!(parse(&text).is_ok());
+    }
+    #[test]fn legacy_sprite_sheet_still_imports_and_restores(){
+        let mut pack:Value=serde_json::from_str(include_str!("../../examples/sprite-sheet/pet.json")).unwrap();
+        let object=pack.as_object_mut().unwrap();object.remove("licenseUrl");object.remove("licenseText");object.insert("id".into(),json!("custom-legacy-test"));
+        for (key,bytes) in [("idle",include_bytes!("../../examples/sprite-sheet/idle.png").as_slice()),("pet",include_bytes!("../../examples/sprite-sheet/pet.png").as_slice())]{pack["skins"][0]["assets"][key]=json!(format!("data:image/png;base64,{}",STANDARD.encode(bytes)));}
+        assert!(validate_role(&pack).is_ok());let mut snapshot=Snapshot::default();snapshot.preferences.pet_id="custom-legacy-test".into();snapshot.custom_pets.push(pack);
+        assert!(parse(&serde_json::to_string(&from_state(snapshot)).unwrap()).is_ok());
+    }
+    #[test]fn validates_variant_crops_metadata_and_micro_motion_loops(){
+        let mut pack=motion_pack();pack["actions"]["pet"]["variants"][0]["frames"][0]["x"]=json!(999999);assert!(validate_role(&pack).is_err());
+        let mut pack=motion_pack();pack["actions"]["blink"]["loop"]=json!(true);assert!(validate_role(&pack).is_err());
+        let mut pack=motion_pack();pack["actions"]["doze"]["weight"]=json!(0);assert!(validate_role(&pack).is_err());
+        let mut pack=motion_pack();pack["schemaVersion"]=json!(1);assert!(validate_role(&pack).is_err());
+    }
     #[test]fn backup_excludes_timer_credentials_and_accepts_old_preferences(){let mut v=serde_json::to_value(from_state(Snapshot::default())).unwrap();assert!(v.get("timer").is_none());assert!(v.get("integrations").is_none());v["preferences"].as_object_mut().unwrap().remove("ambientRange");assert!(parse(&v.to_string()).is_ok());v["apiKey"]=json!("no-secret");assert!(parse(&v.to_string()).is_err());}
     #[test]fn rejects_unknown_selected_roles_and_unsafe_assets(){let mut b=from_state(Snapshot::default());b.preferences.pet_id="missing".into();assert!(validate(&b).is_err());let p=json!({"schemaVersion":1,"id":"custom-a","name":"test","description":"","author":"","license":"","renderer":"static","width":256,"height":256,"skins":[{"id":"a","name":"a","color":"#aabbcc","assets":{"portrait":"https://example.com/a.png"}}],"actions":{"idle":{"frames":[{"asset":"portrait"}],"fps":1,"loop":true}}});assert!(validate_role(&p).is_err());}
 }

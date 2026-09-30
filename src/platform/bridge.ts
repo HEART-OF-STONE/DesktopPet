@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { defaultSnapshot, type Snapshot, type Preferences, type PetPack, type Action, type HitRegion } from '../core/types';
 import { transitionTimer } from '../core/animation';
 import { normalizePetName } from '../core/petNames';
+import { replaceImportedPet } from '../core/petUpdates';
 
 export const desktop = isTauri();
 const key = 'desktop-pet-preview-v1';
@@ -48,6 +49,10 @@ export async function addPet(pack: PetPack): Promise<Snapshot> {
   if (desktop) return invoke('add_pet', { pack });
   if (browserState.customPets.length >= 6) throw new Error('最多导入 6 个角色，请先移除一个');
   return browserCommit({ ...browserState, customPets: [...browserState.customPets, pack], preferences: { ...browserState.preferences, petId: pack.id, skinId: pack.skins[0].id } });
+}
+export async function updatePet(id: string, pack: PetPack): Promise<Snapshot> {
+  if (desktop) return invoke('update_pet', { id, pack });
+  return browserCommit(replaceImportedPet(browserState, id, pack));
 }
 export async function removePet(id: string): Promise<Snapshot> {
   if (desktop) return invoke('remove_pet', { id });
