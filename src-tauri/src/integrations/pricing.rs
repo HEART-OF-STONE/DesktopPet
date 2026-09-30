@@ -4,18 +4,20 @@ use std::collections::{BTreeMap,HashSet};
 
 // USD / 1M tokens; Standard short-context reference prices. Sol/Luna checked 2026-09-29.
 // https://developers.openai.com/api/docs/pricing
+// GPT-6.1 Sol checked 2026-09-30: https://developers.openai.com/api/docs/models/gpt-6.1-sol
 pub fn default_rates()->Vec<PriceRate>{
-    [("gpt-6-astra",10.,1.,50.),("gpt-5.6-sol",4.,0.4,20.),("gpt-5.6-terra",2.,0.2,12.),("gpt-5.6-luna",0.2,0.02,1.2),("gpt-6-sol",2.,0.2,10.),("gpt-6-luna",0.1,0.01,0.5)]
+    [("gpt-6-astra",10.,1.,50.),("gpt-5.6-sol",4.,0.4,20.),("gpt-5.6-terra",2.,0.2,12.),("gpt-5.6-luna",0.2,0.02,1.2),("gpt-6-sol",2.,0.2,10.),("gpt-6-luna",0.1,0.01,0.5),("gpt-6.1-sol",2.,0.1,10.)]
         .into_iter().map(|(model,input,cached,output)|PriceRate{source:"codex".into(),model:model.into(),input,cached,output}).collect()
 }
 // Add newly supported models once. Never replace a custom rate or restore a
 // rate the user deliberately removes after this migration.
 pub fn migrate(d:&mut Data)->bool{
-    if d.pricing_revision>=1{return false;}
-    for rate in default_rates().into_iter().filter(|r|matches!(r.model.as_str(),"gpt-6-sol"|"gpt-6-luna")){
-        if d.price_rates.len()<100&&!d.price_rates.iter().any(|r|r.source==rate.source&&r.model==rate.model){d.price_rates.push(rate);}
+    if d.pricing_revision>=2{return false;}
+    for rate in default_rates(){
+        let introduced=match rate.model.as_str(){"gpt-6-sol"|"gpt-6-luna"=>1,"gpt-6.1-sol"=>2,_=>0};
+        if d.pricing_revision<introduced&&d.price_rates.len()<100&&!d.price_rates.iter().any(|r|r.source==rate.source&&r.model==rate.model){d.price_rates.push(rate);}
     }
-    d.pricing_revision=1;true
+    d.pricing_revision=2;true
 }
 pub fn valid_rates(rates:&[PriceRate])->bool{
     let mut keys=HashSet::new();rates.len()<=100&&rates.iter().all(|r|
@@ -56,14 +58,38 @@ pub async fn update_price_rates(window:WebviewWindow,app:tauri::AppHandle,rates:
     #[test]fn cache_and_reasoning_are_not_double_counted(){let mut d=Data::default();d.usage.push(row("gpt-6-astra"));let v=summarize(&d,"2026-09-15","2026-09-09");assert!((v["today"]["usd"].as_f64().unwrap()-11.4).abs()<1e-9);}
     #[test]fn unknown_invalid_and_zero_price_are_distinct(){let mut d=Data::default();d.usage.push(row("unknown"));assert!(summarize(&d,"2026-09-15","2026-09-09")["today"]["usd"].is_null());d.usage.push(row("gpt-6-astra"));d.usage[1].tokens.cached=2_000_000;let v=summarize(&d,"2026-09-15","2026-09-09");assert_eq!(v["today"]["unpriced"],1);assert_eq!(v["today"]["invalid"],1);d.price_rates.push(PriceRate{source:"codex".into(),model:"unknown".into(),input:0.,cached:0.,output:0.});assert_eq!(summarize(&d,"2026-09-15","2026-09-09")["today"]["usd"],0.);}
     #[test]fn source_and_date_scopes_and_repricing(){let mut d=Data::default();d.usage.push(row("gpt-6-astra"));let mut other=row("gpt-6-astra");other.source="other".into();d.usage.push(other);let mut old=row("gpt-6-astra");old.day="2026-09-08".into();d.usage.push(old);let v=summarize(&d,"2026-09-15","2026-09-09");assert_eq!(v["week"]["records"],2);assert_eq!(v["week"]["unpriced"],1);d.price_rates[0].output=100.;assert!((summarize(&d,"2026-09-15","2026-09-09")["today"]["usd"].as_f64().unwrap()-16.4).abs()<1e-9);}
-    #[test]fn legacy_defaults_and_price_validation(){let d:Data=serde_json::from_str("{}").unwrap();assert_eq!(d.price_rates.len(),6);let mut rates=default_rates();rates.push(rates[0].clone());assert!(!valid_rates(&rates));rates.pop();rates[0].input=f64::NAN;assert!(!valid_rates(&rates));assert!(valid_rates(&[]));}
+    #[test]fn legacy_defaults_and_price_validation(){let d:Data=serde_json::from_str("{}").unwrap();assert_eq!(d.price_rates.len(),7);let mut rates=default_rates();rates.push(rates[0].clone());assert!(!valid_rates(&rates));rates.pop();rates[0].input=f64::NAN;assert!(!valid_rates(&rates));assert!(valid_rates(&[]));}
     #[test]fn migration_prices_old_usage_without_overwriting_custom_prices(){
         let mut d=Data::default();d.price_rates.truncate(4);d.usage.push(row("gpt-6-luna"));
         assert!(summarize(&d,"2026-09-15","2026-09-09")["today"]["usd"].is_null());
-        assert!(migrate(&mut d));assert!((summarize(&d,"2026-09-15","2026-09-09")["today"]["usd"].as_f64().unwrap()-0.114).abs()<1e-9);
-        d.price_rates.retain(|r|r.model!="gpt-6-luna");assert!(!migrate(&mut d));assert_eq!(d.price_rates.len(),5);
+        assert!(migrate(&mut d));assert_eq!(d.price_rates.len(),7);assert!((summarize(&d,"2026-09-15","2026-09-09")["today"]["usd"].as_f64().unwrap()-0.114).abs()<1e-9);
+        d.price_rates.retain(|r|r.model!="gpt-6-luna");assert!(!migrate(&mut d));assert_eq!(d.price_rates.len(),6);
         let mut d=Data::default();d.price_rates[5].input=8.;migrate(&mut d);assert_eq!(d.price_rates[5].input,8.);
-        let restored:Data=serde_json::from_slice(&serde_json::to_vec(&d).unwrap()).unwrap();assert_eq!(restored.pricing_revision,1);
+        let restored:Data=serde_json::from_slice(&serde_json::to_vec(&d).unwrap()).unwrap();assert_eq!(restored.pricing_revision,2);
+    }
+    #[test]fn revision_one_adds_sol61_and_reprices_retained_usage(){
+        let mut d=Data::default();d.pricing_revision=1;d.price_rates.retain(|r|!matches!(r.model.as_str(),"gpt-6.1-sol"|"gpt-6-luna"));d.usage.push(row("gpt-6.1-sol"));
+        assert!(summarize(&d,"2026-09-15","2026-09-09")["today"]["usd"].is_null());
+        assert!(migrate(&mut d));assert_eq!(d.pricing_revision,2);assert!(!d.price_rates.iter().any(|r|r.model=="gpt-6-luna"));
+        let v=summarize(&d,"2026-09-15","2026-09-09");assert_eq!(v["today"]["usd"],2.24);assert_eq!(v["week"]["unpriced"],0);assert_eq!(amount(&d.usage[0],&d.price_rates),Some(2.24));
+        assert_eq!(amount(&row("gpt-6-sol"),&d.price_rates),Some(2.28));
+        d.price_rates.retain(|r|r.model!="gpt-6.1-sol");
+        let mut restored:Data=serde_json::from_slice(&serde_json::to_vec(&d).unwrap()).unwrap();assert!(!migrate(&mut restored));assert_eq!(amount(&restored.usage[0],&restored.price_rates),None);
+    }
+    #[test]fn sol61_migration_preserves_custom_and_free_rates(){
+        for revision in [0,1]{for input in [0.,8.]{
+            let mut d=Data::default();d.pricing_revision=revision;
+            let p=d.price_rates.iter_mut().find(|r|r.model=="gpt-6.1-sol").unwrap();p.input=input;p.cached=0.;p.output=0.;d.pricing_updated_at=Some(42);
+            assert!(migrate(&mut d));assert_eq!(d.price_rates.len(),7);assert_eq!(amount(&row("gpt-6.1-sol"),&d.price_rates),Some(0.6*input));assert_eq!(d.pricing_updated_at,Some(42));
+        }}
+    }
+    #[test]fn price_migration_respects_capacity_and_exact_model_and_source(){
+        let mut d=Data::default();d.pricing_revision=1;d.price_rates.retain(|r|r.model!="gpt-6.1-sol");
+        let mut alias=row("gpt-6.1-sol-latest");assert_eq!(amount(&alias,&d.price_rates),None);
+        assert!(migrate(&mut d));assert_eq!(amount(&alias,&d.price_rates),None);alias.model="gpt-6.1-sol".into();alias.source="other".into();assert_eq!(amount(&alias,&d.price_rates),None);
+        d.pricing_revision=1;d.price_rates.retain(|r|r.model!="gpt-6.1-sol");
+        for i in d.price_rates.len()..100{d.price_rates.push(PriceRate{source:"other".into(),model:format!("custom-{i}"),input:1.,cached:1.,output:1.});}
+        assert!(migrate(&mut d));assert_eq!(d.price_rates.len(),100);assert!(valid_rates(&d.price_rates));
     }
     #[test]fn internal_models_stay_unknown_and_today_does_not_borrow_week_cost(){
         let mut d=Data::default();d.usage.push(row("codex-auto-review"));let mut old=row("gpt-6-astra");old.day="2026-09-14".into();d.usage.push(old);
