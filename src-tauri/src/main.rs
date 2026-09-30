@@ -283,7 +283,7 @@ fn main() {
             set_deepseek_key, demo_agent, integrations::check_connections, integrations::test_agent_connection,
             integrations::inbox::update_inbox, backup::export_backup, backup::preview_backup, backup::restore_backup,
             integrations::pricing::update_price_rates,
-            backup::undo_restore, backup::backup_status, system::get_system_status, system::set_startup,
+            backup::undo_restore, backup::backup_status, integrations::pricing::supplement_price_rates, system::get_system_status, system::set_startup,
             system::set_update_source, system::check_update, system::open_release_page,
             system::set_automatic_updates, system::download_update, system::install_update
         ])

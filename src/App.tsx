@@ -18,14 +18,17 @@ import { SystemPanel } from './SystemPanel';
 import { invoke } from '@tauri-apps/api/core';
 import { getIntegrations, integrationCommand, type IntegrationSettings } from './core/integrations';
 import type { Action, PetPack, Preferences } from './core/types';
+import {buildLabel,type BuildIdentity} from './core/buildIdentity';
 
 type Page='home'|'wardrobe'|'settings'|'agents'|'inbox';
 export function App() {
   const {snapshot,error,setError}=useSnapshot(); const companion=useCompanion(snapshot.preferences,!desktop);
   const [page,setPage]=useState<Page>('home'); const [now,setNow]=useState(Date.now());
   const [hasUpdate,setHasUpdate]=useState(false);
-  useSubscription<{updates:{latest:{newer:boolean}|null}}>('system-status-changed',value=>setHasUpdate(!!value.updates.latest?.newer));
-  useEffect(()=>{if(desktop)void invoke<{updates:{latest:{newer:boolean}|null}}>('get_system_status').then(value=>setHasUpdate(!!value.updates.latest?.newer)).catch(()=>{});},[]);
+  const [build,setBuild]=useState<BuildIdentity|null>(null);
+  const receiveSystem=(value:BuildIdentity&{updates:{latest:{newer:boolean}|null}})=>{setBuild(value);setHasUpdate(!!value.updates.latest?.newer);};
+  useSubscription<BuildIdentity&{updates:{latest:{newer:boolean}|null}}>('system-status-changed',receiveSystem);
+  useEffect(()=>{if(desktop)void invoke<BuildIdentity&{updates:{latest:{newer:boolean}|null}}>('get_system_status').then(receiveSystem).catch(()=>{});},[]);
   useSubscription<string>('navigate-page',value=>{if(value==='agents'||value==='inbox')setPage(value);});
   const [minutes,setMinutes]=useState(25); const [pressed,setPressed]=useState(false); const [flipped,setFlipped]=useState(false);
   const [notice,setNotice]=useState(''); const [importing,setImporting]=useState(false);
@@ -63,7 +66,7 @@ export function App() {
         <button className={page==='agents'?'active':''} onClick={()=>setPage('agents')}><Sparkles size={18}/>Agent 看板</button>
         <button aria-label="提醒收件箱" className={page==='inbox'?'active':''} onClick={()=>setPage('inbox')}><Bell size={18}/>提醒收件箱{unread>0&&<span className="nav-count">{unread}</span>}</button>
       </nav>
-      <div className="sidebar-bottom"><div className="little-note"><Leaf size={21}/><p>不用时刻回应。<br/>陪着你，就很好。</p></div><span className="version"><i/>本地陪伴 · v0.9.1</span></div>
+      <div className="sidebar-bottom"><div className="little-note"><Leaf size={21}/><p>不用时刻回应。<br/>陪着你，就很好。</p></div><span className="version"><i/>{desktop?(build?`v${build.version} · ${buildLabel(build.buildChannel)}`:'正在读取版本…'):'浏览器预览'}</span></div>
     </aside>
     <main className="main-content">
       <header className="page-header"><div><div className="eyebrow">A LITTLE COMPANY</div><h1>{titles[page][0]}</h1><p>{titles[page][1]}</p></div>

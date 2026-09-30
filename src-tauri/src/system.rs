@@ -2,6 +2,7 @@ use crate::*;
 use std::io::Read;
 use tauri_plugin_updater::{Update, UpdaterExt};
 const OFFICIAL_REPO:&str="HEART-OF-STONE/DesktopPet";
+fn build_channel(identifier:&str,debug:bool,prerelease:bool)->&'static str{if identifier=="com.desktop-pet.companion"&&!debug&&!prerelease{"stable"}else{"preview"}}
 const CHECK_INTERVAL:u64=6*60*60*1000;
 fn automatic_default()->bool{true}
 #[derive(Clone,Serialize,Deserialize)]
@@ -58,7 +59,7 @@ fn save(s:&System,value:&Updates)->Result<(),String>{let temp=s.path.with_extens
 fn status(app:&tauri::AppHandle)->Result<Value,String>{
     let startup=read_startup(&startup_name(app))?;let matches=startup.as_ref()==Some(&expected_startup()?);let s=app.state::<System>();
     let updates=s.updates.lock().unwrap().clone();let t=s.transfer.lock().unwrap();
-    Ok(json!({"version":app.package_info().version.to_string(),"installationDirectory":current_installation_directory().ok(),"identifier":app.config().identifier,"managementVisible":app.get_webview_window("main").is_some_and(|w|w.is_visible().unwrap_or(false)),"startupEnabled":startup.is_some(),"startupMatches":matches,"officialRepository":OFFICIAL_REPO,"updates":updates,"transfer":{"phase":t.phase,"downloaded":t.downloaded,"total":t.total,"message":t.message}}))
+    Ok(json!({"version":app.package_info().version.to_string(),"buildChannel":build_channel(&app.config().identifier,cfg!(debug_assertions),!app.package_info().version.pre.is_empty()),"installationDirectory":current_installation_directory().ok(),"identifier":app.config().identifier,"managementVisible":app.get_webview_window("main").is_some_and(|w|w.is_visible().unwrap_or(false)),"startupEnabled":startup.is_some(),"startupMatches":matches,"officialRepository":OFFICIAL_REPO,"updates":updates,"transfer":{"phase":t.phase,"downloaded":t.downloaded,"total":t.total,"message":t.message}}))
 }
 fn notify(app:&tauri::AppHandle){if let Ok(value)=status(app){let _=app.emit_to("main","system-status-changed",value);}}
 fn main_only(w:&WebviewWindow)->Result<(),String>{if w.label()=="main"{Ok(())}else{Err("请在管理窗口中操作系统设置".into())}}
@@ -159,6 +160,7 @@ fn signed_update(app:&tauri::AppHandle,release_version:&str)->Result<Update,Stri
     Ok(())
 }
 #[cfg(test)]mod tests{use super::*;
+    #[test]fn build_channels_distinguish_official_release_debug_and_preview(){assert_eq!(build_channel("com.desktop-pet.companion",false,false),"stable");assert_eq!(build_channel("com.desktop-pet.companion",true,false),"preview");assert_eq!(build_channel("com.desktop-pet.quota-preview",false,false),"preview");assert_eq!(build_channel("com.desktop-pet.companion",false,true),"preview");}
     #[cfg(windows)]
     #[test]fn installation_directory_preserves_custom_paths(){
         for (exe,directory) in [

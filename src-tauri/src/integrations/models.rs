@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap,BTreeSet};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -75,11 +75,11 @@ pub struct Data {
     pub recent_cursors:BTreeMap<String,Cursor>,pub tail_lengths:BTreeMap<String,u64>,pub scan_progress:ScanProgress,
     pub scan_at:Option<u64>, pub scan_error:Option<String>, pub scanned_files:usize, pub detected_home:String, pub scan_pending:bool,
     pub inbox:Vec<InboxItem>,
-    pub price_rates:Vec<PriceRate>,pub pricing_updated_at:Option<u64>,pub pricing_revision:u32,
+    pub price_rates:Vec<PriceRate>,pub pricing_updated_at:Option<u64>,pub pricing_revision:u32,pub pricing_custom:Option<BTreeSet<String>>,
 }
 impl Default for Data {
     fn default()->Self { Self { version:1,settings:Settings::default(),cursors:BTreeMap::new(),usage:vec![],tasks:vec![],seen_events:BTreeMap::new(),
-        quota:Quota::default(),quota_poll:Default::default(),quota_history:Default::default(),credits_backfilled:false,recent_cursors:BTreeMap::new(),tail_lengths:BTreeMap::new(),scan_progress:ScanProgress::default(),balance:Balance::default(),scan_at:None,scan_error:None,scanned_files:0,detected_home:String::new(),scan_pending:false,inbox:vec![],price_rates:super::pricing::default_rates(),pricing_updated_at:None,pricing_revision:0 } }
+        quota:Quota::default(),quota_poll:Default::default(),quota_history:Default::default(),credits_backfilled:false,recent_cursors:BTreeMap::new(),tail_lengths:BTreeMap::new(),scan_progress:ScanProgress::default(),balance:Balance::default(),scan_at:None,scan_error:None,scanned_files:0,detected_home:String::new(),scan_pending:false,inbox:vec![],price_rates:super::pricing::default_rates(),pricing_updated_at:None,pricing_revision:0,pricing_custom:None } }
 }
 #[derive(Clone,Serialize,Deserialize)]
 #[serde(rename_all="camelCase")]

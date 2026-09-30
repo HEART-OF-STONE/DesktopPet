@@ -8,7 +8,7 @@ fn main() {
             "update_inbox", "export_backup", "preview_backup", "restore_backup", "undo_restore", "backup_status",
             "get_system_status", "set_startup", "set_update_source", "check_update", "open_release_page",
             "set_automatic_updates", "download_update", "install_update",
-            "update_price_rates",
+            "update_price_rates", "supplement_price_rates",
         ])
     )).expect("failed to build desktop application");
 }

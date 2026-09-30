@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-supplement-price-rates"
+description = "Enables the supplement_price_rates command without any pre-configured scope."
+commands.allow = ["supplement_price_rates"]
+
+[[permission]]
+identifier = "deny-supplement-price-rates"
+description = "Denies the supplement_price_rates command without any pre-configured scope."
+commands.deny = ["supplement_price_rates"]
