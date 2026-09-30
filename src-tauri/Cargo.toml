@@ -1,6 +1,6 @@
 [package]
 name = "desktop-pet"
-version = "0.9.7"
+version = "0.9.8"
 description = "A quiet companion on your desktop"
 edition = "2021"
 license = "MIT"

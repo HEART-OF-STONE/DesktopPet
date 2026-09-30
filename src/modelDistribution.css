@@ -1,0 +1,22 @@
+.pet-model-distribution{padding:5px 0 1px;color:#506247}
+.pet-model-heading{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}
+.pet-model-heading h3{font-size:11.5px;font-weight:500;line-height:1.4;margin:0}
+.pet-model-switch{display:flex;align-items:center;gap:3px;color:#88917d;flex-shrink:0;font-size:11px}
+.pet-agent-card .pet-model-switch button{color:#88917d;padding:0 1px 3px;min-height:22px;border-radius:0;border-bottom:2px solid transparent;font-size:11px;line-height:1.4}
+.pet-agent-card .pet-model-switch button[aria-pressed=true]{color:#506247;font-weight:500;border-bottom-color:#617556}
+.pet-model-switch button:focus-visible{outline:2px solid #93ad7c;outline-offset:2px}
+.pet-model-bar{display:flex;height:7px;border-radius:5px;overflow:hidden;margin-bottom:7px;gap:1px;background:#fffef7}
+.pet-model-bar>span{flex-shrink:1;min-width:0;height:100%}
+.pet-model-list{list-style:none;padding:0;margin:0;display:grid;gap:5px;font-size:11px;line-height:1.5}
+.pet-model-list li{display:grid;grid-template-columns:minmax(0,1fr) max-content 42px;align-items:baseline;gap:8px}
+.pet-model-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pet-model-name i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.pet-model-amount,.pet-model-share{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.pet-model-amount{font-weight:400}
+.pet-model-share{color:#7e8978}
+.pet-model-missing{font-size:10px;line-height:1.6;color:#a16c3a;margin:6px 0 0;overflow-wrap:anywhere}
+.pet-model-caption{font-size:10px;line-height:1.6;color:#88917d;margin:4px 0}
+.pet-estimate-info{border-top:1px solid #edf0e3;padding:4px 0;font-size:11px}
+.pet-estimate-info>summary{cursor:pointer;list-style:none;color:#74816c;min-height:22px;display:flex;align-items:center}
+.pet-estimate-info>summary::-webkit-details-marker{display:none}
+.pet-estimate-info>summary:focus-visible{outline:2px solid #93ad7c;outline-offset:2px;border-radius:3px}

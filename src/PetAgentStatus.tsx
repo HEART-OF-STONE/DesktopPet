@@ -7,6 +7,7 @@ import { compactNumber, quotaDuration, quotaName, quotaObservation, codexCredits
 import { desktopAction } from './platform/bridge';
 import { detailQuotas, summaryEstimate, summaryQuotas } from './core/petSummary';
 import { QuotaRefreshNote } from './QuotaRefreshNote';
+import { PetModelDistribution } from './PetModelDistribution';
 
 export function PetAgentStatus({agent,quiet,scale=1}:{agent:AgentPresentation;quiet:boolean;scale?:number}){
   const [open,setOpen]=useState(false);const {data,status,demo,clock}=agent;
@@ -39,11 +40,16 @@ export function PetAgentStatus({agent,quiet,scale=1}:{agent:AgentPresentation;qu
       {demo?<p className="pet-data-note">演示还剩 {Math.min(10,Math.max(0,Math.ceil((demo.expiresAt-clock)/1000)))} 秒；下列数值仍是真实记录。</p>:<p className="pet-data-note">状态观察于 {timeLabel(status.updatedAt)}{data.scanPending?' · 历史补读中':''}</p>}
       {data.scanError&&<p className="pet-data-warning">采集暂不可用，显示保留记录。</p>}
       <div className="pet-data-row"><span>今日 token</span><strong>{data.scanAt||data.retainedRecords?compactNumber(data.today.total):'暂无数据'}</strong></div>
+      <section aria-label="今日费用与模型分布">
       <div className="pet-data-row"><span>今日美元预估</span><strong>{estimateLabel(data.estimate?.today)}</strong></div>
-      {estimate.note==='部分计价'&&<p className="pet-data-note">部分计价：当前金额仅包含已成功计价的用量。</p>}
-      <p className="pet-data-note">按所设单价折算，非账单或订阅扣款；完整明细见看板。</p>
-      {quotas.some(w=>w.stale)&&<p className="pet-data-note">“待更新”表示额度快照较旧、已到重置时间或采集暂停。后台每 10 秒读取本地日志，并低频查询实时额度；查询失败时保留上次记录。</p>}
-      <QuotaRefreshNote data={data} className="pet-data-note"/>
+      <PetModelDistribution estimate={data.estimate}/>
+      <details className="pet-estimate-info"><summary><span className="pet-disclosure-label"><ChevronDown size={12}/>计价与查询说明</span></summary>
+        {estimate.note==='部分计价'&&<p className="pet-data-note">部分计价：当前金额仅包含已成功计价的用量。</p>}
+        <p className="pet-data-note">按所设单价折算，非账单或订阅扣款；完整明细见看板。</p>
+        {quotas.some(w=>w.stale)&&<p className="pet-data-note">“待更新”表示额度快照较旧、已到重置时间或采集暂停。后台每 10 秒读取本地日志，并低频查询实时额度；查询失败时保留上次记录。</p>}
+        <QuotaRefreshNote data={data} className="pet-data-note"/>
+      </details>
+      </section>
       {data.quota.error&&<p className="pet-data-warning">{data.quota.error}</p>}
       <details className="pet-credit-detail">
         <summary className="pet-data-row" aria-label="Codex 积分余额与换算说明">

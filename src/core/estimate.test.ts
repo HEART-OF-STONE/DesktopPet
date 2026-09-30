@@ -9,8 +9,10 @@ it('keeps no records, unpriced and free usage distinct',()=>{
   expect(estimateLabel({usd:0,records:1,unpriced:0,invalid:0})).toBe('$0.00');
 });
 it('does not round a small positive estimate to free',()=>{
-  expect(estimateLabel({usd:0.000001,records:1,unpriced:0,invalid:0})).toBe('< $0.0001');
-  expect(estimateLabel({usd:1.2345,records:2,unpriced:1,invalid:0})).toBe('$1.2345 · 部分');
+  expect(estimateLabel({usd:0.000001,records:1,unpriced:0,invalid:0})).toBe('<$0.01');
+  expect(estimateLabel({usd:1.2345,records:2,unpriced:1,invalid:0})).toBe('$1.23 · 部分');
+  expect(estimateLabel({usd:164.3297,records:1,unpriced:0,invalid:0})).toBe('$164.33');
+  expect(estimateLabel({usd:1.005,records:1,unpriced:0,invalid:0})).toBe('$1.01');
 });
 it('pet estimate identifies incomplete collection',()=>{
   expect(petMetric({...emptyIntegrations,scanPending:true,settings:{...emptyIntegrations.settings,petMetric:'estimate'}},0)).toBe('今日预估 暂无记录 · 补读中');

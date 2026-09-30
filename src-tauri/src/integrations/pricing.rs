@@ -60,11 +60,14 @@ impl Total {
         if let Some(p)=rate{let amount=((t.input-t.cached) as f64*p.input+t.cached as f64*p.cached+t.output as f64*p.output)/1_000_000.;self.usd=Some(self.usd.unwrap_or(0.)+amount);}else{self.unpriced+=1;self.unpriced_tokens=self.unpriced_tokens.saturating_add(t.total);}
     }
 }
+#[derive(Default,Serialize)]
+struct ModelDay {tokens:Tokens,total:Total}
 pub fn summarize(d:&Data,today:&str,first:&str)->Value{
     let rates=d.price_rates.iter().map(|p|((p.source.as_str(),p.model.as_str()),p)).collect::<BTreeMap<_,_>>();
-    let(mut day,mut week)=(Total::default(),Total::default());let mut models=BTreeMap::<(&str,&str),Total>::new();
-    for r in &d.usage{if r.day.as_str()<first||r.day.as_str()>today{continue;}let rate=rates.get(&(r.source.as_str(),r.model.as_str())).copied();week.add(r,rate);if r.day==today{day.add(r,rate);}models.entry((&r.source,&r.model)).or_default().add(r,rate);}
-    json!({"today":day,"week":week,"models":models.into_iter().map(|((source,model),total)|json!({"source":source,"model":model,"total":total})).collect::<Vec<_>>(),"rates":d.price_rates,"updatedAt":d.pricing_updated_at,
+    let(mut day,mut week)=(Total::default(),Total::default());let mut models=BTreeMap::<(&str,&str),Total>::new();let mut today_models=BTreeMap::<(&str,&str),ModelDay>::new();
+    for r in &d.usage{if r.day.as_str()<first||r.day.as_str()>today{continue;}let rate=rates.get(&(r.source.as_str(),r.model.as_str())).copied();week.add(r,rate);if r.day==today{day.add(r,rate);let m=today_models.entry((&r.source,&r.model)).or_default();m.tokens.add(&r.tokens);m.total.add(r,rate);}models.entry((&r.source,&r.model)).or_default().add(r,rate);}
+    json!({"today":day,"week":week,"models":models.into_iter().map(|((source,model),total)|json!({"source":source,"model":model,"total":total})).collect::<Vec<_>>(),
+        "todayModels":today_models.into_iter().map(|((source,model),m)|json!({"source":source,"model":model,"tokens":m.tokens,"total":m.total})).collect::<Vec<_>>(),"rates":d.price_rates,"updatedAt":d.pricing_updated_at,
         "referenceRates":default_rates(),"referenceVersion":REFERENCE_VERSION,"rateOrigins":d.price_rates.iter().map(|r|json!({"source":r.source,"model":r.model,"kind":if custom(d,r){"custom"}else{"reference"},"checkedOn":if custom(d,r){None}else{Some(checked_on(&r.model))}})).collect::<Vec<_>>()})
 }
 #[tauri::command]
@@ -82,6 +85,23 @@ pub async fn supplement_price_rates(window:WebviewWindow,app:tauri::AppHandle)->
 #[cfg(test)]mod tests{
     use super::*;
     fn row(model:&str)->UsageRecord{UsageRecord{id:"test".into(),at:0,day:"2026-09-15".into(),source:"codex".into(),model:model.into(),tokens:Tokens{input:1_000_000,cached:400_000,output:100_000,reasoning:50_000,total:1_100_000}}}
+    #[test]fn today_models_preserve_scope_tokens_and_repricing(){
+        let mut d=Data::default();d.usage.push(row("gpt-6-astra"));d.usage.push(row("gpt-6-astra"));d.usage.push(row("unknown"));
+        let mut yesterday=row("only-yesterday");yesterday.day="2026-09-14".into();d.usage.push(yesterday);
+        let mut other=row("gpt-6-astra");other.source="other".into();d.usage.push(other);
+        let v=summarize(&d,"2026-09-15","2026-09-09");let models=v["todayModels"].as_array().unwrap();assert_eq!(models.len(),3);assert_eq!(v["models"].as_array().unwrap().len(),4);
+        let astra=models.iter().find(|m|m["source"]=="codex"&&m["model"]=="gpt-6-astra").unwrap();assert_eq!(astra["tokens"]["total"],2_200_000);assert_eq!(astra["tokens"]["cached"],800_000);assert_eq!(astra["total"]["records"],2);
+        assert!((models.iter().filter_map(|m|m["total"]["usd"].as_f64()).sum::<f64>()-v["today"]["usd"].as_f64().unwrap()).abs()<1e-9);
+        let retained=d.usage.len();d.price_rates[0].output=100.;let repriced=summarize(&d,"2026-09-15","2026-09-09");assert_eq!(d.usage.len(),retained);assert_ne!(v["todayModels"][0]["total"]["usd"],repriced["todayModels"][0]["total"]["usd"]);assert_eq!(v["todayModels"][0]["tokens"],repriced["todayModels"][0]["tokens"]);
+    }
+    #[test]fn today_models_distinguish_missing_invalid_and_free(){
+        let mut d=Data::default();d.usage.push(row("missing"));let mut bad=row("broken");bad.tokens.cached=2_000_000;d.usage.push(bad);d.usage.push(row("free"));
+        d.price_rates.push(PriceRate{source:"codex".into(),model:"free".into(),input:0.,cached:0.,output:0.});
+        let v=summarize(&d,"2026-09-15","2026-09-09");let models=v["todayModels"].as_array().unwrap();
+        let missing=models.iter().find(|m|m["model"]=="missing").unwrap();assert!(missing["total"]["usd"].is_null());assert_eq!(missing["total"]["unpriced"],1);
+        let broken=models.iter().find(|m|m["model"]=="broken").unwrap();assert!(broken["total"]["usd"].is_null());assert_eq!(broken["total"]["invalid"],1);
+        assert_eq!(models.iter().find(|m|m["model"]=="free").unwrap()["total"]["usd"],0.);assert_eq!(models.iter().map(|m|m["tokens"]["total"].as_u64().unwrap()).sum::<u64>(),3_300_000);
+    }
     #[test]fn legacy_origins_and_custom_edits_survive_restart(){
         let mut d=Data::default();d.pricing_revision=2;d.price_rates[0].input=12.;assert!(migrate(&mut d));assert!(custom(&d,&d.price_rates[0]));assert!(!custom(&d,&d.price_rates[1]));assert!(!migrate(&mut d));
         let mut rates=d.price_rates.clone();rates[0].input=10.;rates[1].input=0.;save_rates(&mut d,rates);

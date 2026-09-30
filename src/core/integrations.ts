@@ -3,9 +3,11 @@ import { desktop } from '../platform/bridge';
 export interface IntegrationSettings {codexEnabled:boolean;codexHome:string;codexExecutable:string;bridgeEnabled:boolean;deepseekEnabled:boolean;lowBalance:number;dailyBudget:number;notifyCompleted:boolean;notifyFailed:boolean;notifyApproval:boolean;completionTemplate:string;showPetStatus:boolean;showPetCredits?:boolean;creditsUnit?:'usd'|'credits';creditUsdRate?:number;historyEnabled?:boolean;petLayout?:'side'|'bottom'|'compact';petMetric:'none'|'tokens'|'quota'|'credits'|'balance'|'estimate'}
 export interface PriceRate {source:string;model:string;input:number;cached:number;output:number}
 export interface EstimateTotal {usd:number|null;records:number;unpriced:number;invalid:number;unpricedTokens?:number}
-export interface Estimate {today:EstimateTotal;week:EstimateTotal;models:{source:string;model:string;total:EstimateTotal}[];rates:PriceRate[];updatedAt:number|null;referenceRates?:PriceRate[];referenceVersion?:string;rateOrigins?:{source:string;model:string;kind:'reference'|'custom';checkedOn:string|null}[]}
+export interface TodayModel {source:string;model:string;tokens:TokenUsage;total:EstimateTotal}
+export interface Estimate {today:EstimateTotal;week:EstimateTotal;models:{source:string;model:string;total:EstimateTotal}[];todayModels?:TodayModel[];rates:PriceRate[];updatedAt:number|null;referenceRates?:PriceRate[];referenceVersion?:string;rateOrigins?:{source:string;model:string;kind:'reference'|'custom';checkedOn:string|null}[]}
 export function estimateUnavailable(t:EstimateTotal){return t.unpriced>0?(t.invalid>0?'暂无法估算':'缺少单价'):'明细不完整';}
-export function estimateLabel(t?:EstimateTotal){if(!t||!t.records)return '暂无记录';if(t.usd===null)return estimateUnavailable(t);const value=t.usd>0&&t.usd<0.0001?'< $0.0001':`$${t.usd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4})}`;return value+(t.unpriced+t.invalid?' · 部分':'');}
+export function usdAmount(value:number){return value>0&&value<0.01?'<$0.01':`$${value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
+export function estimateLabel(t?:EstimateTotal){if(!t||!t.records)return '暂无记录';if(t.usd===null)return estimateUnavailable(t);return usdAmount(t.usd)+(t.unpriced+t.invalid?' · 部分':'');}
 export interface TokenUsage {input:number;cached:number;output:number;reasoning:number;total:number}
 export interface AgentNotice {id:string;source:string;kind:string;text:string}
 export interface AgentDemo {id:string;kind:string;expiresAt:number}
