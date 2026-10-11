@@ -24,3 +24,4 @@
 - 原有外部签名密钥仅以路径供构建进程使用，不进入源码、附件或日志。未覆盖日常安装。
 - 源码 `f202d70` 与带注释标签 `v0.9.9` 原子推送到主线；[v0.9.9](https://github.com/HEART-OF-STONE/DesktopPet/releases/tag/v0.9.9) 已公开为最新稳定版。五项附件服务端摘要与本地一致，无认证公开下载后 SHA-256 再次全部一致；下载的更新清单与内置公钥验签通过。
 - 成品仅复制到共享工作区 output 的 v0.9.9 路径，不覆盖其它版本、用户数据或正式安装。
+- 发布提交主线源码检查 [38149889452](https://github.com/HEART-OF-STONE/DesktopPet/actions/runs/38149889452)、标签源码检查 [38149889484](https://github.com/HEART-OF-STONE/DesktopPet/actions/runs/38149889484) 与发布文档检查 [38150046437](https://github.com/HEART-OF-STONE/DesktopPet/actions/runs/38150046437) 均通过。云端签名构建按原有仓库开关跳过，正式签名附件已在本机生成并验证公开下载。
