@@ -15,9 +15,9 @@ pub fn tokens(value:&Value)->Tokens {
 }
 pub fn task_update(data:&mut Data, task:Task)->bool {
     if let Some(old)=data.tasks.iter_mut().find(|t|t.id==task.id) {
-        if task.updated_at<old.updated_at { return false; }
+        if task.updated_at<old.updated_at {old.timing=super::model_rate::merge(&old.timing,&task.timing);if old.model.is_empty(){old.model=task.model;}return false;}
         let changed=old.status!=task.status;
-        *old=Task { tokens:task.tokens.or(old.tokens),..task }; changed
+        *old=Task { tokens:task.tokens.or(old.tokens),timing:super::model_rate::merge(&old.timing,&task.timing),model:if task.model.is_empty(){old.model.clone()}else{task.model.clone()},..task }; changed
     } else { data.tasks.push(task); true }
 }
 pub fn consume(data:&mut Data, cursor:&mut Cursor, value:&Value, fresh_after:u64)->Vec<Task> {
@@ -26,28 +26,36 @@ pub fn consume(data:&mut Data, cursor:&mut Cursor, value:&Value, fresh_after:u64
     let at=value["timestamp"].as_str().and_then(|s|DateTime::parse_from_rfc3339(s).ok()).map(|d|d.timestamp_millis().max(0) as u64).unwrap_or(0);
     if kind=="session_meta" { if let Some(id)=p["id"].as_str() { cursor.session_id=id.chars().take(150).collect(); } }
     if kind=="turn_context" { if let Some(model)=p["model"].as_str() { cursor.model=model.chars().take(100).collect(); }
-        if let Some(id)=p["turn_id"].as_str() { cursor.turn_id=id.chars().take(150).collect(); } }
+        if let Some(id)=p["turn_id"].as_str() { cursor.turn_id=id.chars().take(150).collect(); }
+        if p["model"].is_string(){cursor.model_turn_id=cursor.turn_id.clone();if let Some(task)=data.tasks.iter_mut().find(|t|t.source=="codex"&&t.session_id==cursor.session_id&&t.turn_id==cursor.turn_id){task.model=cursor.model.clone();}}
+    }
     if kind!="event_msg" || at==0 { return notices; }
     let event=p["type"].as_str().unwrap_or("");
     if let Some(id)=p["turn_id"].as_str() { cursor.turn_id=id.chars().take(150).collect(); }
+    if event=="task_started" {super::model_rate::start(cursor,at);}
     if event=="token_count" {
         let quota=parse_quota(&p["rate_limits"],at,"local_log");
         super::quota_history::observe(&mut data.quota_history,&quota,super::now());
         super::quota::merge_log(&mut data.quota,quota);
         let total=&p["info"]["total_token_usage"];
         if total.is_object() {
-            let current=tokens(total); let delta=current.delta(&cursor.cumulative); cursor.cumulative=current;
+            let current=tokens(total); let reset=current.total<cursor.cumulative.total;let delta=current.delta(&cursor.cumulative); cursor.cumulative=current;
+            super::model_rate::usage(cursor,&delta,reset,at);
             // Repeated cumulative snapshots must never fall back to last_token_usage.
             if delta.total>0 {
                 let id=format!("{}:{}:{}:{}",cursor.turn_id,at,cursor.model,cursor.cumulative.total);
                 if data.seen_events.insert(format!("usage:{id}"),at).is_none() { data.usage.push(UsageRecord{id,at,day:day(at),source:"codex".into(),model:cursor.model.clone(),tokens:delta.clone()});
                     if let Some(task)=data.tasks.iter_mut().find(|t|t.session_id==cursor.session_id&&t.turn_id==cursor.turn_id) { task.tokens=Some(task.tokens.unwrap_or(0).saturating_add(delta.total)); } }
             }
+            if let Some(task)=data.tasks.iter_mut().find(|t|t.source=="codex"&&t.session_id==cursor.session_id&&t.turn_id==cursor.turn_id&&t.status=="running"&&at>=t.updated_at){
+                task.timing=super::model_rate::merge(&task.timing,&super::model_rate::read(cursor,p,at,false));task.updated_at=at;
+                if cursor.model_turn_id==cursor.turn_id{task.model=cursor.model.clone();}
+            }
         }
     }
     let status=match event { "task_started"=>"running","task_complete"=>"completed","turn_aborted"=>"interrupted","task_failed"=>"failed",_=>return notices };
     if cursor.turn_id.is_empty() { return notices; }
-    let task=Task { id:format!("codex:{}:{}",cursor.session_id,cursor.turn_id),source:"codex".into(),session_id:cursor.session_id.clone(),turn_id:cursor.turn_id.clone(),status:status.into(),updated_at:at,tokens:None };
+    let task=Task { id:format!("codex:{}:{}",cursor.session_id,cursor.turn_id),source:"codex".into(),session_id:cursor.session_id.clone(),turn_id:cursor.turn_id.clone(),status:status.into(),updated_at:at,tokens:None,timing:super::model_rate::read(cursor,p,at,event!="task_started"),model:if cursor.model_turn_id==cursor.turn_id{cursor.model.clone()}else{String::new()} };
     let event_id=format!("{}:{}",task.id,status);
     let unseen=!data.seen_events.contains_key(&event_id);
     task_update(data,task.clone());
@@ -141,6 +149,17 @@ pub(super) fn scan_history(data:&mut Data, root:&Path, fresh_after:u64)->Result<
 
 #[cfg(test)] mod tests {
     use super::*;use serde_json::json;
+    #[test] fn prefetched_status_receives_valid_rate_without_recounting_usage(){
+        let mut data=Data::default();let mut cursor=Cursor{session_id:"s".into(),..Default::default()};
+        let start=json!({"type":"event_msg","timestamp":"2026-09-15T00:00:00Z","payload":{"type":"task_started","turn_id":"t"}});
+        let context=json!({"type":"turn_context","payload":{"turn_id":"t","model":"gpt-6.1-sol"}});
+        let end=json!({"type":"event_msg","timestamp":"2026-09-15T00:00:02Z","payload":{"type":"task_complete","turn_id":"t","duration_ms":2000}});
+        let mut peek=Data::default();let mut tail=cursor.clone();consume(&mut peek,&mut tail,&end,u64::MAX);for t in peek.tasks{task_update(&mut data,t);}
+        consume(&mut data,&mut cursor,&start,0);consume(&mut data,&mut cursor,&context,0);consume(&mut data,&mut cursor,&sample(100),0);
+        assert_eq!(consume(&mut data,&mut cursor,&end,0).len(),1);
+        assert_eq!(data.tasks[0].model,"gpt-6.1-sol");assert_eq!(data.tasks[0].timing.output_tokens,Some(20));assert_eq!(data.tasks[0].timing.duration_ms,Some(2000));
+        assert!(consume(&mut data,&mut cursor,&end,0).is_empty());assert_eq!(data.usage.len(),1);
+    }
     fn sample(total:u64)->Value {json!({"type":"event_msg","timestamp":"2026-09-15T00:00:00Z","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":total-20,"cached_input_tokens":30,"output_tokens":20,"reasoning_output_tokens":10,"total_tokens":total},"last_token_usage":{"total_tokens":total}}}})}
     #[test] fn repeated_usage_is_not_counted_twice_and_subsets_are_not_added() { let mut d=Data::default();let mut c=Cursor::default();consume(&mut d,&mut c,&sample(100),u64::MAX);consume(&mut d,&mut c,&sample(100),u64::MAX);consume(&mut d,&mut c,&sample(140),u64::MAX);assert_eq!(d.usage.iter().map(|u|u.tokens.total).sum::<u64>(),140);assert_eq!(d.usage.len(),2); }
     #[test] fn credits_upgrade_backfills_consumed_logs_once_without_recounting_usage() {

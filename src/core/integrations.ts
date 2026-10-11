@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { desktop } from '../platform/bridge';
-export interface IntegrationSettings {codexEnabled:boolean;codexHome:string;codexExecutable:string;bridgeEnabled:boolean;deepseekEnabled:boolean;lowBalance:number;dailyBudget:number;notifyCompleted:boolean;notifyFailed:boolean;notifyApproval:boolean;completionTemplate:string;showPetStatus:boolean;showPetCredits?:boolean;creditsUnit?:'usd'|'credits';creditUsdRate?:number;historyEnabled?:boolean;petLayout?:'side'|'bottom'|'compact';petMetric:'none'|'tokens'|'quota'|'credits'|'balance'|'estimate'}
+export interface IntegrationSettings {codexEnabled:boolean;codexHome:string;codexExecutable:string;bridgeEnabled:boolean;deepseekEnabled:boolean;lowBalance:number;dailyBudget:number;notifyCompleted:boolean;notifyFailed:boolean;notifyApproval:boolean;completionTemplate:string;showPetStatus:boolean;showPetTps?:boolean;showPetCredits?:boolean;creditsUnit?:'usd'|'credits';creditUsdRate?:number;historyEnabled?:boolean;petLayout?:'side'|'bottom'|'compact';petMetric:'none'|'tokens'|'quota'|'credits'|'balance'|'estimate'}
 export interface PriceRate {source:string;model:string;input:number;cached:number;output:number}
 export interface EstimateTotal {usd:number|null;records:number;unpriced:number;invalid:number;unpricedTokens?:number}
 export interface TodayModel {source:string;model:string;tokens:TokenUsage;total:EstimateTotal}
@@ -38,9 +38,10 @@ export function quotaFreshnessReason(w:QuotaWindow,now:number,enabled=true){
   if(now-w.updatedAt>900000)return `最近一次额度更新于 ${timeLabel(w.updatedAt)}，距今 ${Math.floor((now-w.updatedAt)/60000)} 分钟；当前显示旧快照。`;
   return '';
 }
+export interface AgentTask {id:string;source:string;sessionId:string;turnId:string;status:string;updatedAt:number;tokens:number|null;model?:string;timing?:{startedAt?:number|null;durationMs?:number|null;outputTokens?:number|null;outputSample?:{at:number;tokens:number|null}|null}}
 export interface IntegrationSnapshot {
   settings:IntegrationSettings;today:TokenUsage;week:TokenUsage;days:Record<string,number>;models:Record<string,number>;
-  tasks:{id:string;source:string;sessionId:string;turnId:string;status:string;updatedAt:number;tokens:number|null}[];
+  tasks:AgentTask[];
   quota:{windows:QuotaWindow[];credits?:Record<string,QuotaCredits>;updatedAt:number|null;source:string;error:string|null};
   balance:{configured:boolean;available:boolean|null;currency:string|null;total:number|null;granted:number|null;toppedUp:number|null;updatedAt:number|null;error:string|null;todayDecrease:number;history:{at:number;day:string;currency:string;total:number;decrease:number}[]};
   scanAt:number|null;scanError:string|null;scannedFiles:number;scanPending:boolean;scanProgress?:{eligibleFiles:number;completedFiles:number;skippedFiles:number;historyPending:boolean};detectedHome:string;bridgeFile:string;retainedRecords:number;

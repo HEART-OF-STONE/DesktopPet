@@ -45,6 +45,8 @@ export function AgentDashboard(props:AgentDemoProps){
     <details className="agent-dashboard-fold"><summary>连接与提醒设置 {draft&&<small>有未保存修改</small>}</summary>
     <section className="panel agent-panel connection-panel"><h2><Link2 size={18}/>连接与提醒</h2><fieldset disabled={busy||!desktop}>
       <CheckSetting label="显示桌宠任务与用量" checked={settings.showPetStatus} change={v=>edit({showPetStatus:v})}/>
+      <CheckSetting label="工作时显示平均 TPS" checked={settings.showPetTps??true} change={v=>edit({showPetTps:v})}/>
+      <p className="agent-note">开始时显示同模型近 24 小时内最多 20 轮的参考均速，取得本轮输出后更新。最多每 5 秒更新显示，沿用现有日志检查，不增加联网请求。点击速率查看说明；该均速包含推理、工具和等待时间。</p>
       <CheckSetting label="常显积分余额" checked={settings.showPetCredits??false} change={v=>edit({showPetCredits:v})}/>
       <label>积分显示单位<select aria-label="积分显示单位" value={settings.creditsUnit||'usd'} onChange={e=>edit({creditsUnit:e.target.value as 'usd'|'credits'})}><option value="usd">美元折合（默认）</option><option value="credits">原始积分</option></select></label>
       <details><summary>积分换算设置</summary><label>每积分折合美元<input aria-label="每积分折合美元" type="number" min="0.000001" max="1000" step="any" value={settings.creditUsdRate??0.04} onChange={e=>edit({creditUsdRate:Number(e.target.value)})}/></label><p className="agent-note">默认 $0.04 / credit，参考官方 2,500 credits 对应 $100 的说明。实际购买价格可能不同；修改只影响积分折合显示，不改变余额、Token 或费用预估。</p><button className="text-button" onClick={()=>edit({creditUsdRate:0.04})}>恢复参考比例</button></details>

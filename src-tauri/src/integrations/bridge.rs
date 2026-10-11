@@ -5,10 +5,10 @@ fn accept(d:&mut Data,e:AgentEvent,clock:u64)->Result<Vec<Task>,String>{
     if !identifier(&e.event_id)||!identifier(&e.source)||!identifier(&e.session_id)||!identifier(&e.turn_id)||!matches!(e.status.as_str(),"running"|"completed"|"failed"|"waiting"|"interrupted")||e.timestamp>clock+300000||e.timestamp<clock.saturating_sub(86400000)||e.model.as_ref().is_some_and(|m|!max_len(m,100)||m.chars().any(char::is_control)) {return Err("事件字段无效".into());}
     if let Some(t)=&e.tokens {if e.source=="codex"||t.total>1_000_000_000||t.cached>t.input||t.reasoning>t.output||t.total!=t.input.saturating_add(t.output){return Err("用量必须为增量，Codex 用量仅由日志采集".into());}}
     let id=format!("bridge:{}:{}",e.source,e.event_id);if d.seen_events.contains_key(&id){return Ok(vec![]);}d.seen_events.insert(id.clone(),e.timestamp);
-    if let Some(tokens)=e.tokens.clone(){d.usage.push(UsageRecord{id,at:e.timestamp,day:scanner::day(e.timestamp),source:e.source.clone(),model:e.model.unwrap_or_default(),tokens});}
+    if let Some(tokens)=e.tokens.clone(){d.usage.push(UsageRecord{id,at:e.timestamp,day:scanner::day(e.timestamp),source:e.source.clone(),model:e.model.clone().unwrap_or_default(),tokens});}
     let task_id=format!("{}:{}:{}",e.source,e.session_id,e.turn_id);
     let previous=d.tasks.iter().find(|t|t.id==task_id).and_then(|t|t.tokens).unwrap_or(0);
-    let task=Task{id:task_id,source:e.source,session_id:e.session_id,turn_id:e.turn_id,status:e.status,updated_at:e.timestamp,tokens:e.tokens.map(|t|previous.saturating_add(t.total))};
+    let task=Task{id:task_id,source:e.source,session_id:e.session_id,turn_id:e.turn_id,status:e.status,updated_at:e.timestamp,tokens:e.tokens.map(|t|previous.saturating_add(t.total)),timing:Default::default(),model:e.model.unwrap_or_default()};
     let changed=scanner::task_update(d,task.clone());Ok(if changed{vec![task]}else{vec![]})
 }
 fn max_len(s:&str,n:usize)->bool{!s.is_empty()&&s.len()<=n}

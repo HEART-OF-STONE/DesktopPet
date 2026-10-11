@@ -1,6 +1,7 @@
 mod models;
 mod scanner;
 mod recent;
+mod model_rate;
 mod quota;
 mod quota_poll;
 mod quota_history;
@@ -63,7 +64,7 @@ fn refresh(app:&tauri::AppHandle,live:bool,balance_requested:bool,auto_quota:boo
     }
     let mut notices=task_notices(&next,tasks);if let Some(n)=balance_notice{notices.push(n);}inbox::append(&mut next,&notices,now());
     // A ten-second timestamp change alone must not rewrite the entire ledger.
-    let changed={let old=s.data.lock().unwrap();!s.path.exists()||old.recent_cursors!=next.recent_cursors||old.tail_lengths!=next.tail_lengths||old.scan_progress!=next.scan_progress||old.credits_backfilled!=next.credits_backfilled||old.cursors!=next.cursors||old.scan_error!=next.scan_error||old.usage.len()!=next.usage.len()||old.seen_events.len()!=next.seen_events.len()||old.inbox.len()!=next.inbox.len()||old.balance.history.len()!=next.balance.history.len()||old.balance.error!=next.balance.error||quota_requested||balance_updated};
+    let changed={let old=s.data.lock().unwrap();!s.path.exists()||old.recent_cursors!=next.recent_cursors||old.tail_lengths!=next.tail_lengths||old.scan_progress!=next.scan_progress||old.credits_backfilled!=next.credits_backfilled||old.rate_backfilled!=next.rate_backfilled||old.tasks!=next.tasks||old.cursors!=next.cursors||old.scan_error!=next.scan_error||old.usage.len()!=next.usage.len()||old.seen_events.len()!=next.seen_events.len()||old.inbox.len()!=next.inbox.len()||old.balance.history.len()!=next.balance.history.len()||old.balance.error!=next.balance.error||quota_requested||balance_updated};
     let history_changed=s.data.lock().map_err(|_|"联动状态不可用")?.quota_history!=next.quota_history;
     if changed||history_changed||!notices.is_empty(){persist(&s,&next)?;}emit_notices(app,notices);
     let value=view(&s,&next);*s.data.lock().unwrap()=next;let _=app.emit("integrations-changed",&value);Ok(value)
@@ -88,7 +89,7 @@ fn clear_demo(app:&tauri::AppHandle){if app.state::<Service>().demo.lock().unwra
 }
 #[tauri::command]pub async fn update_integrations(window:WebviewWindow,app:tauri::AppHandle,settings:Settings)->Result<Value,String>{main_only(&window)?;if !valid(&settings){return Err("设置无效：目录需为绝对路径，提醒阈值需为 0–1000000，文案为 1–160 字".into());}
     tauri::async_runtime::spawn_blocking(move||{let s=app.state::<Service>();let _lock=s.refresh.lock().map_err(|_|"刷新状态不可用")?;let mut d=s.data.lock().map_err(|_|"联动状态不可用")?;let mut next=d.clone();if home(&next.settings)!=home(&settings){next.cursors.clear();next.usage.retain(|r|r.source!="codex");next.tasks.retain(|t|t.source!="codex");next.seen_events.retain(|key,_|!key.starts_with("codex:")&&!key.starts_with("usage:")&&!key.starts_with("bridge:codex:"));next.quota=Quota::default();next.scan_at=None;next.scanned_files=0;}
-        if home(&next.settings)!=home(&settings){next.credits_backfilled=false;next.recent_cursors.clear();next.tail_lengths.clear();next.scan_progress=ScanProgress::default();next.quota_history=quota_history::History{started_at:now(),..Default::default()};}
+        if home(&next.settings)!=home(&settings){next.credits_backfilled=false;next.rate_backfilled=false;next.recent_cursors.clear();next.tail_lengths.clear();next.scan_progress=ScanProgress::default();next.quota_history=quota_history::History{started_at:now(),..Default::default()};}
         next.settings=settings;next.detected_home=home(&next.settings).to_string_lossy().into_owned();persist(&s,&next)?;*d=next;let v=view(&s,&d);let _=app.emit("integrations-changed",&v);Ok(v)}).await.map_err(|_|"保存任务失败")?
 }
 #[tauri::command]pub async fn set_deepseek_key(window:WebviewWindow,app:tauri::AppHandle,key:Option<String>)->Result<Value,String>{main_only(&window)?;if key.as_ref().is_some_and(|v|v.len()<8||v.len()>512||v.chars().any(char::is_whitespace)||v.chars().any(char::is_control)){return Err("API Key 格式无效".into());}

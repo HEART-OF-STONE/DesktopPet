@@ -20,7 +20,7 @@ fn seed(cursor:&mut Cursor,v:&Value){
     let p=&v["payload"];
     match v["type"].as_str(){
         Some("session_meta")=>{if let Some(id)=p["id"].as_str(){cursor.session_id=id.chars().take(150).collect();}},
-        Some("turn_context")=>{if let Some(m)=p["model"].as_str(){cursor.model=m.chars().take(100).collect();}if let Some(t)=p["turn_id"].as_str(){cursor.turn_id=t.chars().take(150).collect();}},
+        Some("turn_context")=>{if let Some(m)=p["model"].as_str(){cursor.model=m.chars().take(100).collect();}if let Some(t)=p["turn_id"].as_str(){cursor.turn_id=t.chars().take(150).collect();}if p["model"].is_string(){cursor.model_turn_id=cursor.turn_id.clone();}},
         Some("event_msg")=>{if let Some(t)=p["turn_id"].as_str(){cursor.turn_id=t.chars().take(150).collect();}if p["type"]=="token_count"&&p["info"]["total_token_usage"].is_object(){cursor.cumulative=tokens(&p["info"]["total_token_usage"]);}},
         _=>{}
     }
@@ -78,7 +78,8 @@ fn peek(data:&mut Data,path:&Path,length:u64,key:&str)->Result<(),String>{
     }
     for point in snapshot.quota_history.points.into_values(){super::quota_history::insert(&mut data.quota_history,point,super::now());}
     quota::merge_log(&mut data.quota,snapshot.quota);
-    for task in snapshot.tasks{task_update(data,task);}
+    // Tail probes can begin mid-round; never replace valid counted output with a partial sum.
+    for mut task in snapshot.tasks{task.tokens=None;task.timing.output_tokens=None;task.timing.output_sample=None;task_update(data,task);}
     data.tail_lengths.insert(key.into(),length);Ok(())
 }
 pub fn scan(data:&mut Data,root:&Path,fresh_after:u64,at:u64)->Result<Vec<Task>,String>{
@@ -94,7 +95,8 @@ pub fn scan(data:&mut Data,root:&Path,fresh_after:u64,at:u64)->Result<Vec<Task>,
     }
     files.sort_by_key(|f|std::cmp::Reverse(f.3));
     // Balances and live status arrive before large usage files finish scanning.
-    for (path,key,length,_) in files.iter().take(8){if data.tail_lengths.get(key)!=Some(length){peek(data,path,*length,key)?;}}
+    for (path,key,length,_) in files.iter().take(8){if !data.rate_backfilled||data.tail_lengths.get(key)!=Some(length){peek(data,path,*length,key)?;}}
+    data.rate_backfilled=true;
     let(mut bytes,mut completed)=(0u64,0usize);let mut notices=vec![];
     let deadline=std::time::Instant::now()+std::time::Duration::from_millis(350);
     for (path,key,length,_) in &files{

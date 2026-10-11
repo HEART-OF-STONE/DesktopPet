@@ -10,13 +10,13 @@ pub struct Settings {
     pub notify_completed: bool, pub notify_failed: bool, pub notify_approval: bool,
     pub completion_template: String,
     pub show_pet_status: bool, pub show_pet_credits:bool, pub pet_metric: String, pub pet_layout:String,
-    pub credits_unit:String, pub credit_usd_rate:f64, pub history_enabled:bool,
+    pub credits_unit:String, pub credit_usd_rate:f64, pub history_enabled:bool, pub show_pet_tps:bool,
 }
 impl Default for Settings {
     fn default() -> Self { Self { codex_enabled:true, codex_home:String::new(), codex_executable:String::new(),
         bridge_enabled:false, deepseek_enabled:false, low_balance:10., daily_budget:10.,
         notify_completed:true, notify_failed:true, notify_approval:true,
-        completion_template:"{source} 的任务完成了 · {tokens}".into(),show_pet_status:true,show_pet_credits:false,pet_metric:"none".into(),pet_layout:"side".into(),credits_unit:"usd".into(),credit_usd_rate:0.04,history_enabled:false } }
+        completion_template:"{source} 的任务完成了 · {tokens}".into(),show_pet_status:true,show_pet_credits:false,pet_metric:"none".into(),pet_layout:"side".into(),credits_unit:"usd".into(),credit_usd_rate:0.04,history_enabled:false,show_pet_tps:true } }
 }
 #[derive(Clone, Default, Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all="camelCase", default)]
@@ -36,12 +36,21 @@ pub struct UsageRecord { pub id:String, pub at:u64, pub day:String, pub source:S
 #[derive(Clone,Serialize,Deserialize)]
 #[serde(rename_all="camelCase",deny_unknown_fields)]
 pub struct PriceRate {pub source:String,pub model:String,pub input:f64,pub cached:f64,pub output:f64}
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all="camelCase",default)]
+pub struct TaskTiming {pub started_at:Option<u64>,pub duration_ms:Option<u64>,pub output_tokens:Option<u64>,pub output_sample:Option<OutputSample>}
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="camelCase")]
-pub struct Task { pub id:String, pub source:String, pub session_id:String, pub turn_id:String, pub status:String, pub updated_at:u64, pub tokens:Option<u64> }
+pub struct OutputSample {pub at:u64,pub tokens:Option<u64>}
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all="camelCase")]
+pub struct Task { pub id:String, pub source:String, pub session_id:String, pub turn_id:String, pub status:String, pub updated_at:u64, pub tokens:Option<u64>,#[serde(default)]pub timing:TaskTiming,#[serde(default)]pub model:String }
+#[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all="camelCase",default)]
+pub struct CursorTiming {pub turn_id:String,pub started_at:Option<u64>,pub output:u64,pub complete:bool,pub observed_at:Option<u64>}
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="camelCase", default)]
-pub struct Cursor { pub offset:u64, pub observed_length:u64, pub prefix:String, pub session_id:String, pub turn_id:String, pub model:String, pub cumulative:Tokens }
+pub struct Cursor { pub offset:u64, pub observed_length:u64, pub prefix:String, pub session_id:String, pub turn_id:String, pub model:String, pub cumulative:Tokens,pub timing:CursorTiming,pub model_turn_id:String }
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all="camelCase",default)]
 pub struct ScanProgress {pub eligible_files:usize,pub completed_files:usize,pub skipped_files:usize,pub history_pending:bool}
@@ -71,7 +80,7 @@ pub struct Data {
     pub seen_events:BTreeMap<String,u64>, pub quota:Quota, pub balance:Balance,
     pub quota_poll:super::quota_poll::QuotaPoll,
     pub quota_history:super::quota_history::History,
-    pub credits_backfilled:bool,
+    pub credits_backfilled:bool,pub rate_backfilled:bool,
     pub recent_cursors:BTreeMap<String,Cursor>,pub tail_lengths:BTreeMap<String,u64>,pub scan_progress:ScanProgress,
     pub scan_at:Option<u64>, pub scan_error:Option<String>, pub scanned_files:usize, pub detected_home:String, pub scan_pending:bool,
     pub inbox:Vec<InboxItem>,
@@ -79,7 +88,7 @@ pub struct Data {
 }
 impl Default for Data {
     fn default()->Self { Self { version:1,settings:Settings::default(),cursors:BTreeMap::new(),usage:vec![],tasks:vec![],seen_events:BTreeMap::new(),
-        quota:Quota::default(),quota_poll:Default::default(),quota_history:Default::default(),credits_backfilled:false,recent_cursors:BTreeMap::new(),tail_lengths:BTreeMap::new(),scan_progress:ScanProgress::default(),balance:Balance::default(),scan_at:None,scan_error:None,scanned_files:0,detected_home:String::new(),scan_pending:false,inbox:vec![],price_rates:super::pricing::default_rates(),pricing_updated_at:None,pricing_revision:0,pricing_custom:None } }
+        quota:Quota::default(),quota_poll:Default::default(),quota_history:Default::default(),credits_backfilled:false,rate_backfilled:false,recent_cursors:BTreeMap::new(),tail_lengths:BTreeMap::new(),scan_progress:ScanProgress::default(),balance:Balance::default(),scan_at:None,scan_error:None,scanned_files:0,detected_home:String::new(),scan_pending:false,inbox:vec![],price_rates:super::pricing::default_rates(),pricing_updated_at:None,pricing_revision:0,pricing_custom:None } }
 }
 #[derive(Clone,Serialize,Deserialize)]
 #[serde(rename_all="camelCase")]
@@ -110,11 +119,14 @@ mod tests {
         assert!(settings.bridge_enabled);
         assert_eq!(settings.completion_template,"旧提醒");
         assert!(settings.show_pet_status);
+        assert!(settings.show_pet_tps);
         assert!(!settings.show_pet_credits);
         assert_eq!(settings.pet_layout,"side");
         assert_eq!(settings.pet_metric,"none");
         let restored:Settings=serde_json::from_str(r#"{"showPetStatus":false,"petMetric":"balance"}"#).unwrap();
         assert!(!restored.show_pet_status);
         assert_eq!(restored.pet_metric,"balance");
+        let task:Task=serde_json::from_str(r#"{"id":"old","source":"codex","sessionId":"s","turnId":"t","status":"completed","updatedAt":1000,"tokens":100}"#).unwrap();
+        assert!(task.model.is_empty()&&task.timing.output_tokens.is_none()&&task.timing.output_sample.is_none());
     }
 }

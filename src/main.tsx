@@ -5,6 +5,7 @@ import { PetWindow } from './PetWindow';
 import './styles.css';
 import './agentPresentation.css';
 import './petSummary.css';
+import './modelRate.css';
 
 const petWindow=new URLSearchParams(location.search).get('pet')==='true';
 document.documentElement.classList.toggle('pet-mode',petWindow);

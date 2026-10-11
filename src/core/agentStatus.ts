@@ -1,6 +1,6 @@
 import { compactNumber, quotaDuration, quotaWindows, quotaName, quotaObservation, codexCredits, estimateLabel, type IntegrationSnapshot } from './integrations';
 import type { PetMotion } from './types';
-export interface PetAgentStatus {kind:string;label:string;source:string;count:number;updatedAt:number|null}
+export interface PetAgentStatus {kind:string;label:string;source:string;count:number;updatedAt:number|null;taskId?:string}
 const labels:Record<string,string>={running:'工作中',waiting:'等待确认',completed:'刚刚完成',failed:'任务出错',interrupted:'已中断',balance:'余额提醒'};
 export const statusLabel=(kind:string)=>labels[kind]||'安静陪伴';
 export const agentMotion=(kind:string):PetMotion=>({running:'thinking',waiting:'attention',completed:'celebrate',failed:'error',balance:'attention',interrupted:'sleepy'} as Record<string,PetMotion>)[kind]||'idle';
@@ -22,7 +22,7 @@ export function selectAgentStatus(data:IntegrationSnapshot,now:number):PetAgentS
   const active=tasks.filter(t=>['running','waiting'].includes(t.status)&&age(t.updatedAt)<30*60000);
   for(const kind of ['waiting','failed','running','completed','interrupted']){
     const match=tasks.filter(t=>t.status===kind&&age(t.updatedAt)<(['running','waiting'].includes(kind)?30*60000:kind==='failed'?5*60000:60000)).sort((a,b)=>b.updatedAt-a.updatedAt)[0];
-    if(match)return {kind,label:statusLabel(kind),source:match.source,count:active.length,updatedAt:match.updatedAt};
+    if(match)return {kind,label:statusLabel(kind),source:match.source,count:active.length,updatedAt:match.updatedAt,taskId:match.id};
   }
   const stale=tasks.filter(t=>['running','waiting'].includes(t.status)).sort((a,b)=>b.updatedAt-a.updatedAt)[0];
   if(stale)return {kind:'stale',label:'状态待核实',source:stale.source,count:0,updatedAt:stale.updatedAt};

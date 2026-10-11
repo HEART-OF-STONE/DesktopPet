@@ -1,0 +1,14 @@
+.pet-status-header{display:flex;align-items:center;gap:8px;min-width:0;padding:5px 9px}
+.pet-agent-status:not(.pet-side-panel){width:max-content;max-width:min(330px,100%)}
+.pet-side-panel>.pet-status-header{min-height:32px;padding:0 0 12px}
+.pet-bottom-panel>.pet-status-header{min-height:28px;padding-bottom:8px}
+.pet-agent-status .pet-status-header>.pet-status-trigger{flex:1;min-width:0;width:auto;min-height:24px;padding:0;justify-content:flex-start}
+.pet-status-header>.pet-status-trigger>.pet-status-label{flex:1;min-width:0;text-align:left}
+.pet-status-header>.pet-status-disclosure{flex:none;width:22px;min-height:24px;padding:0;border:0;background:transparent;color:inherit;border-radius:5px}
+.pet-status-header>.pet-model-rate-hint{display:flex;align-items:center;gap:4px;flex:0 1 auto;min-width:0;max-width:46%;height:24px;padding:0 8px;border:1px solid #e1e7d9;border-radius:8px;background:#f0f4e9;color:#52684a;font-size:12px;line-height:16px;white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
+.pet-model-rate-hint>strong{font-size:inherit;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.pet-model-rate-hint>span{font-size:10px;font-weight:500;line-height:16px;color:#74856a}
+.pet-model-rate-hint:focus-visible,.pet-status-disclosure:focus-visible{outline:2px solid #93ad7c;outline-offset:1px;border-radius:4px}
+.pet-model-rate-detail{padding-bottom:9px;border-bottom:1px solid #edf0e3;font-variant-numeric:tabular-nums}
+.pet-model-rate-detail details{margin-top:4px}
+.pet-model-rate-detail summary{cursor:pointer;color:#88917d;font-size:10px}

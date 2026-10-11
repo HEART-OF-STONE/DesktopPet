@@ -8,9 +8,13 @@ import { desktopAction } from './platform/bridge';
 import { detailQuotas, summaryEstimate, summaryQuotas } from './core/petSummary';
 import { QuotaRefreshNote } from './QuotaRefreshNote';
 import { PetModelDistribution } from './PetModelDistribution';
+import {useModelRate} from './core/useModelRate';
+import {modelRateLabel,modelRateNote} from './core/modelRate';
 
 export function PetAgentStatus({agent,quiet,scale=1}:{agent:AgentPresentation;quiet:boolean;scale?:number}){
   const [open,setOpen]=useState(false);const {data,status,demo,clock}=agent;
+  const active=demo?undefined:data.tasks.find(t=>t.id===status.taskId);
+  const modelRate=useModelRate(data,active,clock);
   if(!data.settings.showPetStatus&&!demo)return null;
   const metric=petMetric(data,clock);
   const card=data.settings.petLayout!=='compact';const bottom=data.settings.petLayout==='bottom';const quotas=summaryQuotas(data,clock);const estimate=summaryEstimate(data.estimate?.today,bottom);
@@ -20,9 +24,15 @@ export function PetAgentStatus({agent,quiet,scale=1}:{agent:AgentPresentation;qu
   const quotaRow=(w:(typeof detail.visible)[number])=><div key={`${w.bucket}:${w.label}`}><div className="pet-data-row"><span>{quotaName(w)} · {quotaDuration(w.windowMinutes)}</span><strong>{w.staleReason?'上次剩余':'剩余'} {(100-w.usedPercent).toFixed(0)}%</strong></div><p className="pet-data-note">{quotaObservation(w,clock)}{w.staleReason&&` · ${w.staleReason}`}</p></div>;
   const collection=data.scanPending?'补读中':data.scanError?'采集异常':!data.settings.codexEnabled?'采集暂停':'';
   return <div style={{zoom:scale}} className={`pet-agent-status ${card?'pet-side-panel':''} ${bottom?'pet-bottom-panel':''} status-${status.kind}`}>
-    <button className="pet-status-trigger" aria-label="桌宠任务状态" aria-expanded={open} onClick={()=>setOpen(v=>!v)}>
-      <i/><span title={`${status.source} ${status.label}`}>{(!card||bottom)&&status.source&&`${status.source==='codex'?'Codex':status.source} · `}{status.label}{status.count>1?` · ${status.count}`:''}{quiet?' · 免打扰':''}</span>{open?<ChevronUp size={14}/>:card?<ChevronRight size={14}/>:<ChevronDown size={12}/>}
-    </button>
+    <div className="pet-status-header">
+      <button className="pet-status-trigger" aria-label="桌宠任务状态" aria-expanded={open} onClick={()=>setOpen(v=>!v)}>
+        <i/><span className="pet-status-label" title={`${status.source} ${status.label}${status.count>1?` · ${status.count}`:''}${quiet?' · 免打扰':''}`}>{(!card||bottom)&&status.source&&`${status.source==='codex'?'Codex':status.source} · `}{status.label}{status.count>1?` · ${status.count}`:''}{quiet?' · 免打扰':''}</span>
+      </button>
+      {modelRate&&data.settings.showPetTps!==false&&<button className="pet-model-rate-hint" aria-label="查看平均速率详情" title={`${modelRateLabel(modelRate)}；${modelRateNote(modelRate)}`} onClick={()=>setOpen(true)}>
+        <strong>{modelRateLabel(modelRate).replace(/ tok\/s$/,'')}</strong><span>TPS</span>
+      </button>}
+      <button className="pet-status-disclosure" aria-label={open?'收起桌宠用量详情':'展开桌宠用量详情'} aria-expanded={open} onClick={()=>setOpen(v=>!v)}>{open?<ChevronUp size={14}/>:card?<ChevronRight size={14}/>:<ChevronDown size={12}/>}</button>
+    </div>
     {card?<button className="pet-summary" aria-label="展开常显用量详情" aria-expanded={open} onClick={()=>setOpen(v=>!v)}>
       <span className="pet-summary-quotas" aria-label="Codex 主额度">
         {quotas.length?quotas.map(w=><span className="pet-summary-quota" key={`${w.bucket}:${w.windowMinutes}`}>
@@ -39,6 +49,10 @@ export function PetAgentStatus({agent,quiet,scale=1}:{agent:AgentPresentation;qu
       <header><strong>{demo?'联动演示':'任务与用量'}</strong><button aria-label="收起用量详情" onClick={()=>setOpen(false)}><X size={14}/></button></header>
       {demo?<p className="pet-data-note">演示还剩 {Math.min(10,Math.max(0,Math.ceil((demo.expiresAt-clock)/1000)))} 秒；下列数值仍是真实记录。</p>:<p className="pet-data-note">状态观察于 {timeLabel(status.updatedAt)}{data.scanPending?' · 历史补读中':''}</p>}
       {data.scanError&&<p className="pet-data-warning">采集暂不可用，显示保留记录。</p>}
+      {modelRate&&<section className="pet-model-rate-detail" aria-label="模型平均速率详情">
+        <div className="pet-data-row"><span>{modelRate.kind==='reference'?'模型参考 TPS':'本轮已观测 TPS'}</span><strong>{modelRateLabel(modelRate)}</strong></div>
+        <details><summary>速率说明{modelRate.stale?' · 保留上次样本':''}</summary><p className="pet-data-note">{modelRateNote(modelRate)}</p></details>
+      </section>}
       <div className="pet-data-row"><span>今日 token</span><strong>{data.scanAt||data.retainedRecords?compactNumber(data.today.total):'暂无数据'}</strong></div>
       <section aria-label="今日费用与模型分布">
       <div className="pet-data-row"><span>今日美元预估</span><strong>{estimateLabel(data.estimate?.today)}</strong></div>
