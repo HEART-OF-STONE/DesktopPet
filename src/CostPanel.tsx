@@ -28,7 +28,7 @@ export function CostPanel({data,onData}:{data:IntegrationSnapshot;onData:(v:Inte
     {missing.length>0&&<p className="agent-note">缺少单价：{missing.map(r=>`${r.source} / ${r.model||'未知模型'}`).join('、')}。Token 已保留，补充单价后自动重算。内部标识（如 codex-auto-review）不推测实际模型价格。</p>}
     <div className="model-list">{e?.models.map(r=><div key={JSON.stringify([r.source,r.model])}><span>{r.source} / {r.model||'未知模型'}</span><strong>{estimateLabel(r.total)}</strong></div>)}</div>
     <details className="price-editor"><summary>配置模型单价（USD / 百万 token）</summary>
-      <p className="agent-note">初始参考价：OpenAI 标准模式、短上下文；GPT-6.1 Sol 核对于 2026-09-30，GPT-6 Sol / Luna 核对于 2026-09-29，其余参考价核对于 2026-09-15。按来源和模型 ID 精确匹配；未提供价格的模型不推测。当前日志未区分长上下文、速度档位和缓存写入费用，也不含工具、图像、语音等额外费用。可按自己的计价假设修改。保存会重算全部保留记录。</p>
+      <p className="agent-note">初始参考价：OpenAI 标准模式、短上下文；GPT-6.2 Astra / Sol 核对于 2026-11-18，GPT-6.1 Sol 核对于 2026-09-30，GPT-6 Sol / Luna 核对于 2026-09-29，其余参考价核对于 2026-09-15。按来源和模型 ID 精确匹配；未提供价格的模型不推测。当前日志未区分长上下文、速度档位和缓存写入费用，也不含工具、图像、语音等额外费用。可按自己的计价假设修改。保存会重算全部保留记录。</p>
       <p className="agent-note">参考价版本 {e?.referenceVersion||'待确认'} · 标准模式、短上下文。内置与自定义价格标注在模型下方。</p>
       <fieldset disabled={!desktop||busy}>
       {references.length>0&&<div className="reference-supplement"><p>可补齐 {references.length} 项：{references.map(r=>r.model).join('、')}</p><button className="secondary-button" disabled={!!draft||!spaceEnough} onClick={()=>void supplement()}>补齐缺失参考价</button>{draft&&<small>先保存或取消当前修改，再补齐参考价。</small>}{!spaceEnough&&<small>最多 100 项，请先移除不需要的价格。</small>}</div>}
